@@ -22,7 +22,7 @@ env:
 script:
  - sudo apt-get remove nuget # https://github.com/travis-ci/travis-ci/issues/3940
  - travis_retry make all-dependencies
- - make all
+ - make all DEBUG=0
  - make check
  - make test
 
