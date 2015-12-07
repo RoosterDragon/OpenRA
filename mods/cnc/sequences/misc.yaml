@@ -35,6 +35,7 @@ smoke_m:
 laserfire:
 	idle:veh-hit3
 		Length: *
+		ZOffset: 511
 
 dragon:
 	idle:
@@ -62,34 +63,23 @@ patriot:
 		ZOffset: 1023
 
 explosion:
+	Defaults:
+		Length: *
+		ZOffset: 511
 	nuke_explosion: atomsfx
-		Length: *
 	piff: piff
-		Length: *
 	piffs: piffpiff
-		Length: *
 	chemball: chemball		#same size as small_napalm, but bright green.
-		Length: *
 	small_napalm: napalm1		#not used by much. currently used for flamethrower.
-		Length: *
 	med_napalm: napalm2		#explosion for bomblets
-		Length: *
 	big_napalm: napalm3		#huge; not used. (SSM used this explosion in C&C Gold?)
-		Length: *
 	small_frag: veh-hit3		#the most common weapon-hit explosion. For rockets, tank shells, etc. 
-		Length: *
 	med_frag: frag1			#fragmentation-style; quite large. (MLRS used this explosion in C&C Gold?)
-		Length: *
 	big_frag: frag3			#Same as med_frag, except fire hangs around longer.
-		Length: *
 	small_poof: veh-hit2		#for Grenades; tower missiles; boat missiles; APC AA gun.
-		Length: *
 	poof: art-exp1			#For UnitExplode (artillery); artillery shell hit; GrenadierExplode, 
-		Length: *
 	small_building: veh-hit1	#like "building' explosion, but much smaller. (Used for heli-explosion in C&C Gold?)
-		Length: *
 	building: fball1		#Large explosion, for when a building explodes. 
-		Length: *
 
 rank:
 	rank:
