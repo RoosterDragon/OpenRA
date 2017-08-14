@@ -206,6 +206,7 @@ namespace OpenRA
 
 			StopMusic();
 
+			Log.Write("music-debug", DateTime.UtcNow.ToString("o") + " Starting music track " + m.Title);
 			Func<ISoundFormat, ISound> stream = soundFormat => soundEngine.Play2DStream(
 				soundFormat.GetPCMInputStream(), soundFormat.Channels, soundFormat.SampleBits, soundFormat.SampleRate,
 				false, true, WPos.Zero, MusicVolume);
@@ -240,6 +241,7 @@ namespace OpenRA
 		{
 			if (music != null)
 			{
+				Log.Write("music-debug", DateTime.UtcNow.ToString("o") + " Stopping music track " + currentMusic.Title);
 				soundEngine.StopSound(music);
 				music = null;
 			}

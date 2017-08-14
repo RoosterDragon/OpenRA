@@ -54,6 +54,11 @@ namespace OpenRA.Platforms.Default
 		IntPtr device;
 		IntPtr context;
 
+		internal static void LogMusicDebug(string value)
+		{
+			Log.Write("music-debug", DateTime.UtcNow.ToString("o") + " " + value);
+		}
+
 		static string[] QueryDevices(string label, int type)
 		{
 			// Clear error bit
@@ -114,6 +119,8 @@ namespace OpenRA.Platforms.Default
 
 		public OpenAlSoundEngine(string deviceName)
 		{
+			Log.AddChannel("music-debug", "music.log");
+
 			if (deviceName != null)
 				Console.WriteLine("Using sound device `{0}`", deviceName);
 			else
@@ -165,6 +172,8 @@ namespace OpenRA.Platforms.Default
 				var sound = kv.Value.Sound;
 				if (sound != null && sound.Complete)
 				{
+					if (sound is OpenAlAsyncLoadSound)
+						LogMusicDebug("Reclaiming source for a completed OpenAlAsyncLoadSound. " + sound.Source);
 					var freeSource = kv.Key;
 					freeSources.Add(freeSource);
 					AL10.alSourceRewind(freeSource);
@@ -259,7 +268,10 @@ namespace OpenRA.Platforms.Default
 
 			uint source;
 			if (!TryGetSourceFromPool(out source))
+			{
+				LogMusicDebug("Play2DStream failed to get a source from the pool.");
 				return null;
+			}
 
 			var slot = sourcePool[source];
 			slot.Pos = pos;
@@ -507,6 +519,7 @@ namespace OpenRA.Platforms.Default
 
 			playTask = Task.Run(async () =>
 			{
+				OpenAlSoundEngine.LogMusicDebug("Streaming task is about to load audio. " + Source);
 				MemoryStream memoryStream;
 				using (stream)
 				{
@@ -514,6 +527,7 @@ namespace OpenRA.Platforms.Default
 					try
 					{
 						await stream.CopyToAsync(memoryStream, 81920, cts.Token);
+						OpenAlSoundEngine.LogMusicDebug("Streaming task loaded audio. " + Source);
 					}
 					catch (TaskCanceledException)
 					{
@@ -521,6 +535,7 @@ namespace OpenRA.Platforms.Default
 						AL10.alSourceStop(source);
 						AL10.alSourcei(source, AL10.AL_BUFFER, 0);
 						silentSource.Dispose();
+						OpenAlSoundEngine.LogMusicDebug("Streaming task cancelled audio loading. " + Source);
 						return;
 					}
 				}
@@ -530,10 +545,14 @@ namespace OpenRA.Platforms.Default
 				var lengthInSecs = data.Length / (channels * bytesPerSample * sampleRate);
 				using (var soundSource = new OpenAlSoundSource(data, channels, sampleBits, sampleRate))
 				{
+					OpenAlSoundEngine.LogMusicDebug("Created new sound source. " + Source);
+
 					// Need to stop the source, before attaching the real input and deleting the silent one.
 					AL10.alSourceStop(source);
 					AL10.alSourcei(source, AL10.AL_BUFFER, (int)soundSource.Buffer);
 					silentSource.Dispose();
+
+					OpenAlSoundEngine.LogMusicDebug("Attached real audio buffer. " + Source);
 
 					lock (cts)
 					{
@@ -545,12 +564,16 @@ namespace OpenRA.Platforms.Default
 							int state;
 							AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out state);
 							if (state != AL10.AL_STOPPED)
+							{
+								OpenAlSoundEngine.LogMusicDebug("Playing source. " + Source);
 								AL10.alSourcePlay(source);
+							}
 							else
 							{
 								// A stopped sound indicates it was paused before we finishing loaded.
 								// We don't want to start playing it right away.
 								// We rewind the source so when it is started, it plays from the beginning.
+								OpenAlSoundEngine.LogMusicDebug("Rewinding source. " + Source);
 								AL10.alSourceRewind(source);
 							}
 						}
@@ -566,13 +589,17 @@ namespace OpenRA.Platforms.Default
 						int state;
 						AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out state);
 						if (state == AL10.AL_STOPPED)
+						{
+							OpenAlSoundEngine.LogMusicDebug("Stopped waiting - source has stopped. " + Source);
 							break;
+						}
 
 						try
 						{
 							// Wait until the track is due to complete, and at most 60 times a second to prevent a
 							// busy-wait.
 							var delaySecs = Math.Max(lengthInSecs - currentSeek, 1 / 60f);
+							OpenAlSoundEngine.LogMusicDebug("Waiting for " + delaySecs + " secs. " + Source);
 							await Task.Delay(TimeSpan.FromSeconds(delaySecs), cts.Token);
 						}
 						catch (TaskCanceledException)
@@ -582,6 +609,7 @@ namespace OpenRA.Platforms.Default
 					}
 
 					AL10.alSourcei(Source, AL10.AL_BUFFER, 0);
+					OpenAlSoundEngine.LogMusicDebug("Streaming audio finished. " + Source);
 				}
 			});
 		}
@@ -590,6 +618,7 @@ namespace OpenRA.Platforms.Default
 		{
 			lock (cts)
 			{
+				OpenAlSoundEngine.LogMusicDebug("Stop called on OpenAlAsyncLoadSound. " + Source);
 				StopSource();
 				cts.Cancel();
 			}
