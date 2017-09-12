@@ -56,12 +56,9 @@ namespace OpenRA.Platforms.Default
 
 		static string[] QueryDevices(string label, int type)
 		{
-			// Clear error bit
-			AL10.alGetError();
-
 			// Returns a null separated list of strings, terminated by two nulls.
 			var devicesPtr = ALC10.alcGetString(IntPtr.Zero, type);
-			if (devicesPtr == IntPtr.Zero || AL10.alGetError() != AL10.AL_NO_ERROR)
+			if (devicesPtr == IntPtr.Zero || ALC10.alcGetError(IntPtr.Zero) != ALC10.ALC_NO_ERROR)
 			{
 				Log.Write("sound", "Failed to query OpenAL device list using {0}", label);
 				return new string[0];
@@ -95,10 +92,14 @@ namespace OpenRA.Platforms.Default
 		static string[] PhysicalDevices()
 		{
 			// Returns all devices under Windows Vista and newer
-			if (ALC11.alcIsExtensionPresent(IntPtr.Zero, "ALC_ENUMERATE_ALL_EXT"))
+			var canEnumerateAll = ALC11.alcIsExtensionPresent(IntPtr.Zero, "ALC_ENUMERATE_ALL_EXT");
+			CheckALCError(IntPtr.Zero);
+			if (canEnumerateAll)
 				return QueryDevices("ALC_ENUMERATE_ALL_EXT", ALC11.ALC_ALL_DEVICES_SPECIFIER);
 
-			if (ALC11.alcIsExtensionPresent(IntPtr.Zero, "ALC_ENUMERATION_EXT"))
+			var canEnumerate = ALC11.alcIsExtensionPresent(IntPtr.Zero, "ALC_ENUMERATION_EXT");
+			CheckALCError(IntPtr.Zero);
+			if (canEnumerate)
 				return QueryDevices("ALC_ENUMERATION_EXT", ALC10.ALC_DEVICE_SPECIFIER);
 
 			return new string[] { };
@@ -110,6 +111,32 @@ namespace OpenRA.Platforms.Default
 				return bits == 16 ? AL10.AL_FORMAT_MONO16 : AL10.AL_FORMAT_MONO8;
 			else
 				return bits == 16 ? AL10.AL_FORMAT_STEREO16 : AL10.AL_FORMAT_STEREO8;
+		}
+
+		internal static void CheckALError()
+		{
+			var n = AL10.alGetError();
+			if (n != AL10.AL_NO_ERROR)
+			{
+				var exceptionMessage = "OpenAL Error: " + n;
+				if (n == AL10.AL_OUT_OF_MEMORY)
+					throw new OutOfMemoryException(exceptionMessage);
+				else
+					throw new InvalidOperationException(exceptionMessage);
+			}
+		}
+
+		internal static void CheckALCError(IntPtr device)
+		{
+			var n = ALC10.alcGetError(device);
+			if (n != ALC10.ALC_NO_ERROR)
+			{
+				var exceptionMessage = "OpenAL Context Error: " + n;
+				if (n == ALC10.ALC_OUT_OF_MEMORY)
+					throw new OutOfMemoryException(exceptionMessage);
+				else
+					throw new InvalidOperationException(exceptionMessage);
+			}
 		}
 
 		public OpenAlSoundEngine(string deviceName)
@@ -129,9 +156,9 @@ namespace OpenRA.Platforms.Default
 			}
 
 			context = ALC10.alcCreateContext(device, null);
-			if (context == IntPtr.Zero)
-				throw new InvalidOperationException("Can't create OpenAL context");
+			CheckALCError(device);
 			ALC10.alcMakeContextCurrent(context);
+			CheckALCError(device);
 
 			for (var i = 0; i < PoolSize; i++)
 			{
@@ -168,7 +195,9 @@ namespace OpenRA.Platforms.Default
 					var freeSource = kv.Key;
 					freeSources.Add(freeSource);
 					AL10.alSourceRewind(freeSource);
+					CheckALError();
 					AL10.alSourcei(freeSource, AL10.AL_BUFFER, 0);
+					CheckALError();
 				}
 			}
 
@@ -273,7 +302,7 @@ namespace OpenRA.Platforms.Default
 		public float Volume
 		{
 			get { return volume; }
-			set { AL10.alListenerf(AL10.AL_GAIN, volume = value); }
+			set { AL10.alListenerf(AL10.AL_GAIN, volume = value); CheckALError(); }
 		}
 
 		public void PauseSound(ISound sound, bool paused)
@@ -295,20 +324,29 @@ namespace OpenRA.Platforms.Default
 		{
 			int state;
 			AL10.alGetSourcei(source, AL10.AL_SOURCE_STATE, out state);
+			CheckALError();
 			if (paused)
 			{
 				if (state == AL10.AL_PLAYING)
+				{
 					AL10.alSourcePause(source);
+					CheckALError();
+				}
 				else if (state == AL10.AL_INITIAL)
 				{
 					// If a sound hasn't started yet,
 					// we indicate it should not play be transitioning it to the stopped state.
 					AL10.alSourcePlay(source);
+					CheckALError();
 					AL10.alSourceStop(source);
+					CheckALError();
 				}
 			}
 			else if (!paused && state != AL10.AL_PLAYING)
+			{
 				AL10.alSourcePlay(source);
+				CheckALError();
+			}
 		}
 
 		public void SetSoundVolume(float volume, ISound music, ISound video)
@@ -317,13 +355,17 @@ namespace OpenRA.Platforms.Default
 			{
 				int state;
 				AL10.alGetSourcei(key, AL10.AL_SOURCE_STATE, out state);
+				CheckALError();
 				return (state == AL10.AL_PLAYING || state == AL10.AL_PAUSED) &&
 					   (music == null || key != ((OpenAlSound)music).Source) &&
 					   (video == null || key != ((OpenAlSound)video).Source);
 			});
 
 			foreach (var s in sounds)
+			{
 				AL10.alSourcef(s, AL10.AL_GAIN, volume);
+				CheckALError();
+			}
 		}
 
 		public void StopSound(ISound sound)
@@ -345,10 +387,13 @@ namespace OpenRA.Platforms.Default
 		{
 			// Move the listener out of the plane so that sounds near the middle of the screen aren't too positional
 			AL10.alListener3f(AL10.AL_POSITION, position.X, position.Y, position.Z + 2133);
+			CheckALError();
 
 			var orientation = new[] { 0f, 0f, 1f, 0f, -1f, 0f };
 			AL10.alListenerfv(AL10.AL_ORIENTATION, orientation);
+			CheckALError();
 			AL10.alListenerf(EFX.AL_METERS_PER_UNIT, .01f);
+			CheckALError();
 		}
 
 		~OpenAlSoundEngine()
@@ -369,13 +414,16 @@ namespace OpenRA.Platforms.Default
 			if (context != IntPtr.Zero)
 			{
 				ALC10.alcMakeContextCurrent(IntPtr.Zero);
+				CheckALCError(device);
 				ALC10.alcDestroyContext(context);
+				CheckALCError(device);
 				context = IntPtr.Zero;
 			}
 
 			if (device != IntPtr.Zero)
 			{
 				ALC10.alcCloseDevice(device);
+				CheckALCError(device);
 				device = IntPtr.Zero;
 			}
 		}
@@ -393,7 +441,9 @@ namespace OpenRA.Platforms.Default
 		{
 			SampleRate = sampleRate;
 			AL10.alGenBuffers(new IntPtr(1), out buffer);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alBufferData(buffer, OpenAlSoundEngine.MakeALFormat(channels, sampleBits), data, new IntPtr(data.Length), new IntPtr(sampleRate));
+			OpenAlSoundEngine.CheckALError();
 		}
 
 		protected virtual void Dispose(bool disposing)
@@ -401,6 +451,7 @@ namespace OpenRA.Platforms.Default
 			if (!disposed)
 			{
 				AL10.alDeleteBuffers(new IntPtr(1), ref buffer);
+				OpenAlSoundEngine.CheckALError();
 				disposed = true;
 			}
 		}
@@ -426,7 +477,9 @@ namespace OpenRA.Platforms.Default
 			: this(source, looping, relative, pos, volume, sampleRate)
 		{
 			AL10.alSourcei(source, AL10.AL_BUFFER, (int)buffer);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alSourcePlay(source);
+			OpenAlSoundEngine.CheckALError();
 		}
 
 		protected OpenAlSound(uint source, bool looping, bool relative, WPos pos, float volume, int sampleRate)
@@ -436,19 +489,36 @@ namespace OpenRA.Platforms.Default
 			Volume = volume;
 
 			AL10.alSourcef(source, AL10.AL_PITCH, 1f);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alSource3f(source, AL10.AL_POSITION, pos.X, pos.Y, pos.Z);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alSource3f(source, AL10.AL_VELOCITY, 0f, 0f, 0f);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alSourcei(source, AL10.AL_LOOPING, looping ? 1 : 0);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alSourcei(source, AL10.AL_SOURCE_RELATIVE, relative ? 1 : 0);
+			OpenAlSoundEngine.CheckALError();
 
 			AL10.alSourcef(source, AL10.AL_REFERENCE_DISTANCE, 6826);
+			OpenAlSoundEngine.CheckALError();
 			AL10.alSourcef(source, AL10.AL_MAX_DISTANCE, 136533);
+			OpenAlSoundEngine.CheckALError();
 		}
 
 		public float Volume
 		{
-			get { float volume; AL10.alGetSourcef(Source, AL10.AL_GAIN, out volume); return volume; }
-			set { AL10.alSourcef(Source, AL10.AL_GAIN, value); }
+			get
+			{
+				float volume;
+				AL10.alGetSourcef(Source, AL10.AL_GAIN, out volume);
+				OpenAlSoundEngine.CheckALError();
+				return volume;
+			}
+			set
+			{
+				AL10.alSourcef(Source, AL10.AL_GAIN, value);
+				OpenAlSoundEngine.CheckALError();
+			}
 		}
 
 		public virtual float SeekPosition
@@ -457,6 +527,7 @@ namespace OpenRA.Platforms.Default
 			{
 				int sampleOffset;
 				AL10.alGetSourcei(Source, AL11.AL_SAMPLE_OFFSET, out sampleOffset);
+				OpenAlSoundEngine.CheckALError();
 				return sampleOffset / SampleRate;
 			}
 		}
@@ -467,6 +538,7 @@ namespace OpenRA.Platforms.Default
 			{
 				int state;
 				AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out state);
+				OpenAlSoundEngine.CheckALError();
 				return state == AL10.AL_STOPPED;
 			}
 		}
@@ -474,20 +546,26 @@ namespace OpenRA.Platforms.Default
 		public void SetPosition(WPos pos)
 		{
 			AL10.alSource3f(Source, AL10.AL_POSITION, pos.X, pos.Y, pos.Z);
+			OpenAlSoundEngine.CheckALError();
 		}
 
 		protected void StopSource()
 		{
 			int state;
 			AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out state);
+			OpenAlSoundEngine.CheckALError();
 			if (state == AL10.AL_PLAYING || state == AL10.AL_PAUSED)
+			{
 				AL10.alSourceStop(Source);
+				OpenAlSoundEngine.CheckALError();
+			}
 		}
 
 		public virtual void Stop()
 		{
 			StopSource();
 			AL10.alSourcei(Source, AL10.AL_BUFFER, 0);
+			OpenAlSoundEngine.CheckALError();
 		}
 	}
 
@@ -504,6 +582,7 @@ namespace OpenRA.Platforms.Default
 			// attempting to change the state (i.e. play/pause) the source fails on some systems.
 			var silentSource = new OpenAlSoundSource(SilentData, channels, sampleBits, sampleRate);
 			AL10.alSourcei(source, AL10.AL_BUFFER, (int)silentSource.Buffer);
+			OpenAlSoundEngine.CheckALError();
 
 			playTask = Task.Run(async () =>
 			{
@@ -519,7 +598,9 @@ namespace OpenRA.Platforms.Default
 					{
 						// Sound was stopped early, cleanup the unused buffer and exit.
 						AL10.alSourceStop(source);
+						OpenAlSoundEngine.CheckALError();
 						AL10.alSourcei(source, AL10.AL_BUFFER, 0);
+						OpenAlSoundEngine.CheckALError();
 						silentSource.Dispose();
 						return;
 					}
@@ -532,7 +613,9 @@ namespace OpenRA.Platforms.Default
 				{
 					// Need to stop the source, before attaching the real input and deleting the silent one.
 					AL10.alSourceStop(source);
+					OpenAlSoundEngine.CheckALError();
 					AL10.alSourcei(source, AL10.AL_BUFFER, (int)soundSource.Buffer);
+					OpenAlSoundEngine.CheckALError();
 					silentSource.Dispose();
 
 					lock (cts)
@@ -544,14 +627,19 @@ namespace OpenRA.Platforms.Default
 							// consequences are minor, so for now we'll ignore it.
 							int state;
 							AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out state);
+							OpenAlSoundEngine.CheckALError();
 							if (state != AL10.AL_STOPPED)
+							{
 								AL10.alSourcePlay(source);
+								OpenAlSoundEngine.CheckALError();
+							}
 							else
 							{
 								// A stopped sound indicates it was paused before we finishing loaded.
 								// We don't want to start playing it right away.
 								// We rewind the source so when it is started, it plays from the beginning.
 								AL10.alSourceRewind(source);
+								OpenAlSoundEngine.CheckALError();
 							}
 						}
 					}
@@ -565,6 +653,7 @@ namespace OpenRA.Platforms.Default
 
 						int state;
 						AL10.alGetSourcei(Source, AL10.AL_SOURCE_STATE, out state);
+						OpenAlSoundEngine.CheckALError();
 						if (state == AL10.AL_STOPPED)
 							break;
 
@@ -582,6 +671,7 @@ namespace OpenRA.Platforms.Default
 					}
 
 					AL10.alSourcei(Source, AL10.AL_BUFFER, 0);
+					OpenAlSoundEngine.CheckALError();
 				}
 			});
 		}
