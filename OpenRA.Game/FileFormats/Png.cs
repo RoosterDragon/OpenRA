@@ -40,31 +40,30 @@ namespace OpenRA.FileFormats
 			var headerParsed = false;
 			var isPaletted = false;
 			var is24Bit = false;
-			var data = new List<byte>();
+			var windows = new List<(long offset, int length)>();
 
+			var typeBuffer = new byte[4];
 			while (true)
 			{
 				var length = IPAddress.NetworkToHostOrder(s.ReadInt32());
-				var type = Encoding.UTF8.GetString(s.ReadBytes(4));
-				var content = s.ReadBytes(length);
-				/*var crc = */s.ReadInt32();
+				s.ReadBytes(typeBuffer, 0, 4);
+				var type = Encoding.UTF8.GetString(typeBuffer);
 
 				if (!headerParsed && type != "IHDR")
 					throw new InvalidDataException("Invalid PNG file - header does not appear first.");
 
-				using (var ms = new MemoryStream(content))
+				switch (type)
 				{
-					switch (type)
-					{
-						case "IHDR":
+					case "IHDR":
 						{
 							if (headerParsed)
 								throw new InvalidDataException("Invalid PNG file - duplicate header.");
-							Width = IPAddress.NetworkToHostOrder(ms.ReadInt32());
-							Height = IPAddress.NetworkToHostOrder(ms.ReadInt32());
 
-							var bitDepth = ms.ReadUInt8();
-							var colorType = (PngColorType)ms.ReadByte();
+							Width = IPAddress.NetworkToHostOrder(s.ReadInt32());
+							Height = IPAddress.NetworkToHostOrder(s.ReadInt32());
+
+							var bitDepth = s.ReadUInt8();
+							var colorType = (PngColorType)s.ReadUInt8();
 							isPaletted = IsPaletted(bitDepth, colorType);
 							is24Bit = colorType == PngColorType.Color;
 
@@ -74,9 +73,9 @@ namespace OpenRA.FileFormats
 
 							Data = new byte[dataLength];
 
-							var compression = ms.ReadByte();
-							/*var filter = */ms.ReadByte();
-							var interlace = ms.ReadByte();
+							var compression = s.ReadUInt8();
+							/*var filter = */s.ReadUInt8();
+							var interlace = s.ReadUInt8();
 
 							if (compression != 0)
 								throw new InvalidDataException("Compression method not supported");
@@ -89,89 +88,100 @@ namespace OpenRA.FileFormats
 							break;
 						}
 
-						case "PLTE":
+					case "PLTE":
 						{
 							Palette = new Color[256];
 							for (var i = 0; i < length / 3; i++)
 							{
-								var r = ms.ReadByte(); var g = ms.ReadByte(); var b = ms.ReadByte();
+								var r = s.ReadUInt8(); var g = s.ReadUInt8(); var b = s.ReadUInt8();
 								Palette[i] = Color.FromArgb(r, g, b);
 							}
 
 							break;
 						}
 
-						case "tRNS":
+					case "tRNS":
 						{
 							if (Palette == null)
 								throw new InvalidDataException("Non-Palette indexed PNG are not supported.");
 
 							for (var i = 0; i < length; i++)
-								Palette[i] = Color.FromArgb(ms.ReadByte(), Palette[i]);
+								Palette[i] = Color.FromArgb(s.ReadUInt8(), Palette[i]);
 
 							break;
 						}
 
-						case "IDAT":
+					case "IDAT":
 						{
-							data.AddRange(content);
+							windows.Add((s.Position, length));
+
+							s.Position += length;
 
 							break;
 						}
 
-						case "tEXt":
+					case "tEXt":
 						{
-							var key = ms.ReadASCIIZ();
-							EmbeddedData.Add(key, ms.ReadASCII(length - key.Length - 1));
+							var key = s.ReadASCIIZ();
+							EmbeddedData.Add(key, s.ReadASCII(length - key.Length - 1));
 
 							break;
 						}
 
-						case "IEND":
+					case "IEND":
 						{
-							using (var ns = new MemoryStream(data.ToArray()))
+							using (var ws = new WindowedStream(s, windows))
+							using (var ds = new InflaterInputStream(ws))
 							{
-								using (var ds = new InflaterInputStream(ns))
+								var pxStride = isPaletted ? 1 : is24Bit ? 3 : 4;
+								var srcStride = Width * pxStride;
+								var destStride = Width * (isPaletted ? 1 : 4);
+
+								var prevLine = new byte[srcStride];
+								var line = new byte[srcStride];
+								for (var y = 0; y < Height; y++)
 								{
-									var pxStride = isPaletted ? 1 : is24Bit ? 3 : 4;
-									var srcStride = Width * pxStride;
-									var destStride = Width * (isPaletted ? 1 : 4);
+									var filter = (PngFilter)ds.ReadUInt8();
+									ds.ReadBytes(line, 0, srcStride);
 
-									var prevLine = new byte[srcStride];
-									for (var y = 0; y < Height; y++)
+									for (var i = 0; i < srcStride; i++)
+										line[i] = i < pxStride
+											? UnapplyFilter(filter, line[i], 0, prevLine[i], 0)
+											: UnapplyFilter(filter, line[i], line[i - pxStride], prevLine[i], prevLine[i - pxStride]);
+
+									if (is24Bit)
 									{
-										var filter = (PngFilter)ds.ReadByte();
-										var line = ds.ReadBytes(srcStride);
-
-										for (var i = 0; i < srcStride; i++)
-											line[i] = i < pxStride
-												? UnapplyFilter(filter, line[i], 0, prevLine[i], 0)
-												: UnapplyFilter(filter, line[i], line[i - pxStride], prevLine[i], prevLine[i - pxStride]);
-
-										if (is24Bit)
+										// Fold alpha channel into RGB data
+										for (var i = 0; i < line.Length / 3; i++)
 										{
-											// Fold alpha channel into RGB data
-											for (var i = 0; i < line.Length / 3; i++)
-											{
-												Array.Copy(line, 3 * i, Data, y * destStride + 4 * i, 3);
-												Data[y * destStride + 4 * i + 3] = 255;
-											}
+											Array.Copy(line, 3 * i, Data, y * destStride + 4 * i, 3);
+											Data[y * destStride + 4 * i + 3] = 255;
 										}
-										else
-											Array.Copy(line, 0, Data, y * destStride, line.Length);
-
-										prevLine = line;
 									}
+									else
+										Array.Copy(line, 0, Data, y * destStride, line.Length);
+
+									var temp = prevLine;
+									prevLine = line;
+									line = temp;
 								}
 							}
 
 							if (isPaletted && Palette == null)
 								throw new InvalidDataException("Non-Palette indexed PNG are not supported.");
 
+							s.Position += length;
+
 							return;
 						}
-					}
+
+					default:
+						s.Position += length;
+						break;
 				}
+
+				// CRC
+				s.Position += 4;
 			}
 		}
 
@@ -350,6 +360,115 @@ namespace OpenRA.FileFormats
 		public void Save(string path)
 		{
 			File.WriteAllBytes(path, Save());
+		}
+
+		/// <summary>
+		/// Allows seeking over a given stream to return data within a series of windows.
+		/// </summary>
+		class WindowedStream : Stream
+		{
+			// Underlying stream is NOT owned and should not be disposed.
+			readonly Stream stream;
+			readonly (long offset, int length)[] windows;
+
+			int windowIndex;
+			int windowPosition;
+
+			public WindowedStream(Stream stream, IEnumerable<(long offset, int length)> windows)
+			{
+				if (stream == null)
+					throw new ArgumentNullException(nameof(stream));
+				if (!stream.CanSeek)
+					throw new ArgumentException("stream must be seekable.", nameof(stream));
+				if (windows == null)
+					throw new ArgumentNullException(nameof(windows));
+
+				this.windows = windows.ToArray();
+				if (this.windows.Length == 0)
+					throw new ArgumentException("windows is empty.", nameof(windows));
+				if (this.windows.Any(w => w.offset < 0 || w.length <= 0 || w.offset + w.length > stream.Length))
+					throw new ArgumentException("windows do not fit within stream.", nameof(windows));
+
+				this.stream = stream;
+
+				stream.Seek(this.windows[0].offset, SeekOrigin.Begin);
+			}
+
+			public override bool CanSeek { get { return false; } }
+			public override bool CanRead { get { return stream.CanRead; } }
+			public override bool CanWrite { get { return false; } }
+
+			public override long Length { get { throw new NotSupportedException(); } }
+			public override long Position
+			{
+				get { throw new NotSupportedException(); }
+				set { throw new NotSupportedException(); }
+			}
+
+			public override int ReadByte()
+			{
+				var window = windows[windowIndex];
+				if (++windowPosition >= window.length)
+				{
+					if (++windowIndex >= windows.Length)
+						return -1;
+
+					window = windows[windowIndex];
+					stream.Seek(window.offset, SeekOrigin.Begin);
+					windowPosition = 1;
+				}
+
+				return stream.ReadByte();
+			}
+
+			public override int Read(byte[] buffer, int offset, int count)
+			{
+				var window = windows[windowIndex];
+				var remaining = window.length - windowPosition;
+				if (remaining <= 0)
+				{
+					if (++windowIndex >= windows.Length)
+						return -1;
+
+					window = windows[windowIndex];
+					stream.Seek(window.offset, SeekOrigin.Begin);
+					windowPosition = 0;
+					remaining = window.length - windowPosition;
+				}
+
+				var read = stream.Read(buffer, offset, Math.Min(count, remaining));
+				windowPosition += read;
+				return read;
+			}
+
+			public override void WriteByte(byte value)
+			{
+				throw new NotSupportedException();
+			}
+
+			public override void Write(byte[] buffer, int offset, int count)
+			{
+				throw new NotSupportedException();
+			}
+
+			public override void Flush() { stream.Flush(); }
+			public override long Seek(long offset, SeekOrigin origin) { throw new NotSupportedException(); }
+
+			public override void SetLength(long value) { throw new NotSupportedException(); }
+
+			public override bool CanTimeout { get { return stream.CanTimeout; } }
+
+			public override int ReadTimeout
+			{
+				get { return stream.ReadTimeout; }
+				set { stream.ReadTimeout = value; }
+			}
+
+			public override int WriteTimeout
+			{
+				get { return stream.WriteTimeout; }
+				set { stream.WriteTimeout = value; }
+			}
 		}
 	}
 }
