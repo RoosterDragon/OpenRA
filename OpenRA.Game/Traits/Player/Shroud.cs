@@ -99,9 +99,59 @@ namespace OpenRA.Traits
 		readonly ProjectedCellLayer<short> generatedShroudCount;
 		readonly ProjectedCellLayer<bool> explored;
 		readonly ProjectedCellLayer<bool> touched;
+		readonly MarkedBins touchedBins;
 
 		// Per-cell cache of the resolved cell type (shroud/fog/visible)
 		readonly ProjectedCellLayer<ShroudCellType> resolvedType;
+
+		class MarkedBins
+		{
+			readonly bool[] bins;
+			readonly int numberOfBinsX, numberOfBinsY;
+			readonly int binSize;
+			readonly int2 area;
+
+			public MarkedBins(int binSize, int2 area)
+			{
+				this.binSize = binSize;
+				this.area = area;
+				numberOfBinsX = Exts.IntegerDivisionRoundingAwayFromZero(area.X, binSize);
+				numberOfBinsY = Exts.IntegerDivisionRoundingAwayFromZero(area.Y, binSize);
+				bins = new bool[numberOfBinsX * numberOfBinsY];
+			}
+
+			public void MarkBinContainingPoint(int x, int y)
+			{
+				var binIndex = y / binSize * numberOfBinsX + x / binSize;
+				bins[binIndex] = true;
+			}
+
+			public void ApplyOverAllPointsInMarkedBinsAndUnmark(Action<int, int> action)
+			{
+				for (var binX = 0; binX < numberOfBinsX; binX++)
+				{
+					for (var binY = 0; binY < numberOfBinsY; binY++)
+					{
+						var binIndex = binY * numberOfBinsX + binX;
+						var binTouched = bins[binIndex];
+
+						if (!binTouched)
+							continue;
+
+						bins[binIndex] = false;
+
+						var minX = binX * binSize;
+						var maxX = Math.Min(minX + binSize, area.X);
+						var minY = binY * binSize;
+						var maxY = Math.Min(minY + binSize, area.Y);
+
+						for (var x = minX; x < maxX; x++)
+							for (var y = minY; y < maxY; y++)
+								action(x, y);
+					}
+				}
+			}
+		}
 
 		[Sync]
 		bool disabled;
@@ -145,6 +195,8 @@ namespace OpenRA.Traits
 
 			// Defaults to 0 = Shroud
 			resolvedType = new ProjectedCellLayer<ShroudCellType>(map);
+
+			touchedBins = new MarkedBins(5, map.MapSize);
 		}
 
 		void INotifyCreated.Created(Actor self)
@@ -162,10 +214,11 @@ namespace OpenRA.Traits
 			if (OnShroudChanged == null)
 				return;
 
-			foreach (var puv in map.ProjectedCells)
+			touchedBins.ApplyOverAllPointsInMarkedBinsAndUnmark((u, v) =>
 			{
+				var puv = new PPos(u, v);
 				if (!touched[puv])
-					continue;
+					return;
 
 				touched[puv] = false;
 
@@ -184,7 +237,7 @@ namespace OpenRA.Traits
 				resolvedType[puv] = type;
 				if (type != oldResolvedType)
 					OnShroudChanged(puv);
-			}
+			});
 
 			Hash = Sync.HashPlayer(self.Owner) + self.World.WorldTick;
 		}
@@ -232,6 +285,7 @@ namespace OpenRA.Traits
 					continue;
 
 				touched[puv] = true;
+				touchedBins.MarkBinContainingPoint(puv.U, puv.V);
 				switch (type)
 				{
 					case SourceType.PassiveVisibility:
@@ -262,6 +316,7 @@ namespace OpenRA.Traits
 				if (map.Contains(puv))
 				{
 					touched[puv] = true;
+					touchedBins.MarkBinContainingPoint(puv.U, puv.V);
 					switch (state.Type)
 					{
 						case SourceType.PassiveVisibility:
@@ -287,6 +342,7 @@ namespace OpenRA.Traits
 				if (map.Contains(puv) && !explored[puv])
 				{
 					touched[puv] = true;
+					touchedBins.MarkBinContainingPoint(puv.U, puv.V);
 					explored[puv] = true;
 				}
 			}
@@ -302,6 +358,7 @@ namespace OpenRA.Traits
 				if (!explored[puv] && s.explored[puv])
 				{
 					touched[puv] = true;
+					touchedBins.MarkBinContainingPoint(puv.U, puv.V);
 					explored[puv] = true;
 				}
 			}
@@ -314,6 +371,7 @@ namespace OpenRA.Traits
 				if (!explored[puv])
 				{
 					touched[puv] = true;
+					touchedBins.MarkBinContainingPoint(puv.U, puv.V);
 					explored[puv] = true;
 				}
 			}
@@ -324,6 +382,7 @@ namespace OpenRA.Traits
 			foreach (var puv in map.ProjectedCells)
 			{
 				touched[puv] = true;
+				touchedBins.MarkBinContainingPoint(puv.U, puv.V);
 				explored[puv] = (visibleCount[puv] + passiveVisibleCount[puv]) > 0;
 			}
 		}
