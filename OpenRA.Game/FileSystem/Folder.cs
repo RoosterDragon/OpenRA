@@ -84,7 +84,7 @@ namespace OpenRA.FileSystem
 			// prefix to these hacked packages.
 			var filePath = filename.StartsWith(path) ? filename : Path.Combine(path, filename);
 
-			Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+			Directory.CreateDirectory(Unforgiving.Path.GetDirectoryName(filePath));
 			using (var s = File.Create(filePath))
 				s.Write(contents, 0, contents.Length);
 		}

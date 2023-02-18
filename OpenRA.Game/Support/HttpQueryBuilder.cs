@@ -26,12 +26,12 @@ namespace OpenRA.Support
 			this.url = url;
 		}
 
-		public void Add(string name, object value)
+		public void Add(string name, string value)
 		{
 			parameters.Add(new Parameter
 			{
 				Name = name,
-				Value = Uri.EscapeDataString(value.ToString())
+				Value = Uri.EscapeDataString(value)
 			});
 		}
 

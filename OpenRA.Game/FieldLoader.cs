@@ -479,7 +479,7 @@ namespace OpenRA
 
 			var parts = value.Split(SplitComma, StringSplitOptions.RemoveEmptyEntries);
 			var arguments = fieldType.GetGenericArguments();
-			var addMethod = fieldType.GetMethod(nameof(List<object>.Add), arguments);
+			var addMethod = fieldType.GetMethodUnforgiving(nameof(List<object>.Add), arguments);
 			var addArgs = new object[1];
 			for (var i = 0; i < parts.Length; i++)
 			{
@@ -494,7 +494,7 @@ namespace OpenRA
 		{
 			var dict = Activator.CreateInstance(fieldType);
 			var arguments = fieldType.GetGenericArguments();
-			var addMethod = fieldType.GetMethod(nameof(Dictionary<object, object>.Add), arguments);
+			var addMethod = fieldType.GetMethodUnforgiving(nameof(Dictionary<object, object>.Add), arguments);
 			var addArgs = new object[2];
 			foreach (var node in yaml.Nodes)
 			{
@@ -511,7 +511,7 @@ namespace OpenRA
 			if (value != null)
 			{
 				var parts = value.Split(SplitComma, StringSplitOptions.RemoveEmptyEntries);
-				var ctor = fieldType.GetConstructor(new[] { typeof(string[]) });
+				var ctor = fieldType.GetConstructorUnforgiving(new[] { typeof(string[]) });
 				return ctor.Invoke(new object[] { parts.Select(p => p.Trim()).ToArray() });
 			}
 
@@ -525,7 +525,7 @@ namespace OpenRA
 
 			var innerType = fieldType.GetGenericArguments().First();
 			var innerValue = GetValue("Nullable<T>", innerType, value, field);
-			return fieldType.GetConstructor(new[] { innerType }).Invoke(new[] { innerValue });
+			return fieldType.GetConstructorUnforgiving(new[] { innerType }).Invoke(new[] { innerValue });
 		}
 
 		public static void Load(object self, MiniYaml my)
@@ -643,16 +643,17 @@ namespace OpenRA
 
 				if (fieldType.IsArray && fieldType.GetArrayRank() == 1)
 				{
+					var elementType = fieldType.GetElementTypeUnforgiving();
 					if (value == null)
-						return Array.CreateInstance(fieldType.GetElementType(), 0);
+						return Array.CreateInstance(elementType, 0);
 
 					var options = field != null && field.HasAttribute<AllowEmptyEntriesAttribute>() ?
 						StringSplitOptions.None : StringSplitOptions.RemoveEmptyEntries;
 					var parts = value.Split(SplitComma, options);
 
-					var ret = Array.CreateInstance(fieldType.GetElementType(), parts.Length);
+					var ret = Array.CreateInstance(elementType, parts.Length);
 					for (var i = 0; i < parts.Length; i++)
-						ret.SetValue(GetValue(fieldName, fieldType.GetElementType(), parts[i].Trim(), field), i);
+						ret.SetValue(GetValue(fieldName, elementType, parts[i].Trim(), field), i);
 					return ret;
 				}
 			}

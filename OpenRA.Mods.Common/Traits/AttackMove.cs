@@ -160,12 +160,10 @@ namespace OpenRA.Mods.Common.Traits
 				{
 					var explored = subject.Actor.Owner.Shroud.IsExplored(cell);
 					var cannotMove = subjects.FirstOrDefault(a => !a.Trait.Info.MoveIntoShroud).Trait;
-					var blocked = !explored && cannotMove != null;
+					if (!explored && cannotMove != null)
+						return isAssaultMove ? cannotMove.Info.AssaultMoveBlockedCursor : cannotMove.Info.AttackMoveBlockedCursor;
 
-					if (isAssaultMove)
-						return blocked ? cannotMove.Info.AssaultMoveBlockedCursor : info.AssaultMoveCursor;
-
-					return blocked ? cannotMove.Info.AttackMoveBlockedCursor : info.AttackMoveCursor;
+					return isAssaultMove ? info.AssaultMoveCursor : info.AttackMoveCursor;
 				}
 
 				if (isAssaultMove)

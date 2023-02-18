@@ -122,7 +122,7 @@ namespace OpenRA.Mods.Common.Traits
 			// PERF: Avoid repeated trait queries on the hot path
 			if (locomotor == null)
 				locomotor = world.WorldActor.TraitsImplementing<Locomotor>()
-				   .SingleOrDefault(l => l.Info.Name == Locomotor);
+				   .Single(l => l.Info.Name == Locomotor);
 
 			return locomotor.MovementCostToEnterCell(
 				self, cell, check, ignoreActor, subCell) != PathGraph.MovementCostForUnreachableCell;
@@ -133,7 +133,7 @@ namespace OpenRA.Mods.Common.Traits
 			// PERF: Avoid repeated trait queries on the hot path
 			if (locomotor == null)
 				locomotor = world.WorldActor.TraitsImplementing<Locomotor>()
-				   .SingleOrDefault(l => l.Info.Name == Locomotor);
+				   .Single(l => l.Info.Name == Locomotor);
 
 			if (cell.Layer == CustomMovementLayerType.Tunnel)
 				return false;

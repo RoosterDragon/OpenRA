@@ -44,7 +44,7 @@ namespace OpenRA.Mods.Cnc.Installer
 					using (var stream = mixFile.GetStream(node.Value.Value))
 					{
 						extracted.Add(targetPath);
-						Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
+						Directory.CreateDirectory(Unforgiving.Path.GetDirectoryName(targetPath));
 						var displayFilename = Path.GetFileName(Path.GetFileName(targetPath));
 
 						Action<long> onProgress = null;

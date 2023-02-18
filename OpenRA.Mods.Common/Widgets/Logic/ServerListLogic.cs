@@ -394,7 +394,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			clientContainer = widget.GetOrNull("CLIENT_LIST_CONTAINER");
 			if (clientContainer != null)
 			{
-				clientList = Ui.LoadWidget("MULTIPLAYER_CLIENT_LIST", clientContainer, new WidgetArgs()) as ScrollPanelWidget;
+				clientList = (ScrollPanelWidget)Ui.LoadWidget("MULTIPLAYER_CLIENT_LIST", clientContainer, new WidgetArgs());
 				clientList.IsVisible = () => currentServer != null && currentServer.Clients.Length > 0;
 				clientHeader = clientList.Get<ScrollItemWidget>("HEADER");
 				clientTemplate = clientList.Get<ScrollItemWidget>("TEMPLATE");
@@ -439,7 +439,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			var queryURL = new HttpQueryBuilder(services.ServerList)
 			{
-				{ "protocol", GameServer.ProtocolVersion },
+				{ "protocol", GameServer.ProtocolVersion.ToString() },
 				{ "engine", Game.EngineVersion },
 				{ "mod", Game.ModData.Manifest.Id },
 				{ "version", Game.ModData.Manifest.Metadata.Version }

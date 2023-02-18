@@ -129,7 +129,7 @@ namespace OpenRA.Mods.Cnc.Traits
 
 		protected override IEnumerable<IRenderable> RenderAnnotations(WorldRenderer wr, World world)
 		{
-			var info = instance.Info as AttackOrderPowerInfo;
+			var info = (AttackOrderPowerInfo)instance.Info;
 			foreach (var a in instance.Instances.Where(i => !i.IsTraitPaused))
 			{
 				yield return new RangeCircleAnnotationRenderable(

@@ -42,7 +42,7 @@ namespace OpenRA
 	class TraitDictionary
 	{
 		static readonly Func<Type, ITraitContainer> CreateTraitContainer = t =>
-			(ITraitContainer)typeof(TraitContainer<>).MakeGenericType(t).GetConstructor(Type.EmptyTypes).Invoke(null);
+			(ITraitContainer)typeof(TraitContainer<>).MakeGenericType(t).GetConstructorUnforgiving(Type.EmptyTypes).Invoke(null);
 
 		readonly Dictionary<Type, ITraitContainer> traits = new Dictionary<Type, ITraitContainer>();
 

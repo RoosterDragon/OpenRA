@@ -72,7 +72,7 @@ namespace OpenRA
 
 			var init = (ActorInit)FormatterServices.GetUninitializedObject(type);
 			if (initInstance.Length > 1)
-				type.GetField(nameof(ActorInit.InstanceName)).SetValue(init, initInstance[1]);
+				type.GetFieldUnforgiving(nameof(ActorInit.InstanceName)).SetValue(init, initInstance[1]);
 
 			var loader = type.GetMethod("Initialize", new[] { typeof(MiniYaml) });
 			if (loader == null)

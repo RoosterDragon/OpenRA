@@ -268,7 +268,7 @@ namespace OpenRA
 
 		public static void CreateAndStartLocalServer(string mapUID, IEnumerable<Order> setupOrders)
 		{
-			OrderManager om = null;
+			var om = JoinServer(CreateLocalServer(mapUID), "");
 
 			Action lobbyReady = null;
 			lobbyReady = () =>
@@ -279,8 +279,6 @@ namespace OpenRA
 			};
 
 			LobbyInfoChanged += lobbyReady;
-
-			om = JoinServer(CreateLocalServer(mapUID), "");
 		}
 
 		public static bool IsHost
@@ -381,7 +379,7 @@ namespace OpenRA
 					if (platformType == null)
 						throw new InvalidOperationException("Platform dll must include exactly one IPlatform implementation.");
 
-					var platform = (IPlatform)platformType.GetConstructor(Type.EmptyTypes).Invoke(null);
+					var platform = (IPlatform)platformType.GetConstructorUnforgiving(Type.EmptyTypes).Invoke(null);
 					Renderer = new Renderer(platform, Settings.Graphics);
 					Sound = new Sound(platform, Settings.Sound);
 

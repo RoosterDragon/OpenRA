@@ -40,7 +40,7 @@ namespace OpenRA.Mods.Common.Widgets
 			var rb = RenderBounds;
 			var offset = int2.Zero;
 
-			var svc = world.Players.Select(p => p.PlayerActor.TraitOrDefault<StrategicVictoryConditions>()).FirstOrDefault();
+			var svc = world.Players.First().PlayerActor.Trait<StrategicVictoryConditions>();
 
 			var totalWidth = svc.Total * 32;
 			var curX = -totalWidth / 2;

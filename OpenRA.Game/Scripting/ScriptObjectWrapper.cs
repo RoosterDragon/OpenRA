@@ -43,7 +43,7 @@ namespace OpenRA.Scripting
 			var objects = new object[types.Length];
 			i = 0;
 			foreach (var type in types)
-				objects[i++] = type.GetConstructor(argTypes).Invoke(constructorArgs);
+				objects[i++] = type.GetConstructorUnforgiving(argTypes).Invoke(constructorArgs);
 
 			return objects;
 		}

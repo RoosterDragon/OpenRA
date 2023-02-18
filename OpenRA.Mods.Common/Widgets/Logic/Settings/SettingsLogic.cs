@@ -86,7 +86,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 				foreach (var panel in panels)
 				{
-					var container = panelTemplate.Clone() as ContainerWidget;
+					var container = (ContainerWidget)panelTemplate.Clone();
 					container.Id = panel.Key;
 					panelContainer.AddChild(container);
 
@@ -168,7 +168,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		ButtonWidget AddSettingsTab(string id, string label)
 		{
-			var tab = tabTemplate.Clone() as ButtonWidget;
+			var tab = (ButtonWidget)tabTemplate.Clone();
 			var lastButton = buttons.LastOrDefault();
 			if (lastButton != null)
 			{

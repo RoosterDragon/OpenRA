@@ -282,7 +282,7 @@ namespace OpenRA.Scripting
 
 		Type[] FilterCommands(ActorInfo ai, Type[] knownCommands)
 		{
-			var method = typeof(ActorInfo).GetMethod(nameof(ActorInfo.HasTraitInfo));
+			var method = typeof(ActorInfo).GetMethodUnforgiving(nameof(ActorInfo.HasTraitInfo));
 			return knownCommands.Where(c => ExtractRequiredTypes(c)
 				.All(t => (bool)method.MakeGenericMethod(t).Invoke(ai, NoArguments)))
 				.ToArray();

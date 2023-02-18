@@ -453,7 +453,7 @@ namespace OpenRA
 			var defaults = Activator.CreateInstance(section.GetType());
 			FieldLoader.InvalidValueAction = (s, t, f) =>
 			{
-				var ret = defaults.GetType().GetField(f).GetValue(defaults);
+				var ret = defaults.GetType().GetFieldUnforgiving(f).GetValue(defaults);
 				Console.WriteLine($"FieldLoader: Cannot parse `{s}` into `{f}:{t.Name}`; substituting default `{ret}`");
 				return ret;
 			};

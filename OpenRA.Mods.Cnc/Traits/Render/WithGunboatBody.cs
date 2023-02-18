@@ -49,7 +49,7 @@ namespace OpenRA.Mods.Cnc.Traits.Render
 		static Func<WAngle> MakeTurretFacingFunc(Actor self)
 		{
 			// Turret artwork is baked into the sprite, so only the first turret makes sense.
-			var turreted = self.TraitsImplementing<Turreted>().FirstOrDefault();
+			var turreted = self.TraitsImplementing<Turreted>().First();
 			return () => turreted.WorldOrientation.Yaw;
 		}
 

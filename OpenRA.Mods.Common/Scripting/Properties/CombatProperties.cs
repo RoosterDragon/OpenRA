@@ -70,7 +70,7 @@ namespace OpenRA.Mods.Common.Scripting
 
 			var repeat = func.Call(Self.ToLuaValue(Context)).First().ToBoolean();
 			if (repeat)
-				using (var f = func.CopyReference() as LuaFunction)
+				using (var f = (LuaFunction)func.CopyReference())
 					Self.QueueActivity(new CallFunc(() => PatrolUntil(waypoints, f, wait)));
 		}
 	}

@@ -72,7 +72,7 @@ namespace OpenRA.Mods.Common.Traits
 
 			if (footprintChars.Length != dim.X * dim.Y)
 			{
-				var fp = footprintYaml.Value.Value;
+				var fp = footprintYaml?.Value.Value ?? "x (default footprint)";
 				var dims = dim.X + "x" + dim.Y;
 				throw new YamlException($"Invalid footprint: {fp} does not match dimensions {dims}");
 			}

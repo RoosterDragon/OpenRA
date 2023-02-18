@@ -58,7 +58,7 @@ namespace OpenRA.Mods.Common.Installer
 						}
 
 						extracted.Add(targetPath);
-						Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
+						Directory.CreateDirectory(Unforgiving.Path.GetDirectoryName(targetPath));
 						using (var target = File.OpenWrite(targetPath))
 						{
 							Log.Write("install", $"Extracting {sourcePath} -> {targetPath}");

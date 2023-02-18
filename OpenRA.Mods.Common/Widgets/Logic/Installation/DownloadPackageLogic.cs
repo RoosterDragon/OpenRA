@@ -234,7 +234,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 										onExtractProgress(modData.Translation.GetString(ExtractingEntry, Translation.Arguments("entry", kv.Value)));
 										Log.Write("install", "Extracting " + kv.Value);
 										var targetPath = Platform.ResolvePath(kv.Key);
-										Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
+										Directory.CreateDirectory(Unforgiving.Path.GetDirectoryName(targetPath));
 										extracted.Add(targetPath);
 
 										using (var zz = package.GetStream(kv.Value))

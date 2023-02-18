@@ -59,7 +59,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public override void Activate(Actor self, Order order, SupportPowerManager manager)
 		{
-			var info = Info as SpawnActorPowerInfo;
+			var info = (SpawnActorPowerInfo)Info;
 			var position = order.Target.CenterPosition;
 			var cell = self.World.Map.CellContaining(position);
 

@@ -88,7 +88,7 @@ namespace OpenRA
 			try
 			{
 				if (traitInstance.Length > 1)
-					info.GetType().GetField(nameof(info.InstanceName)).SetValue(info, traitInstance[1]);
+					info.GetType().GetFieldUnforgiving(nameof(info.InstanceName)).SetValue(info, traitInstance[1]);
 
 				FieldLoader.Load(info, my);
 			}

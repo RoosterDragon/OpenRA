@@ -216,7 +216,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					if (e.Modifiers == Modifiers.Shift)
 						team = team.Reverse();
 
-					selected = team.SkipWhile(t => t.Player != selected.Player).Skip(1).FirstOrDefault() ?? team.FirstOrDefault();
+					selected = team.SkipWhile(t => t.Player != selected.Player).Skip(1).FirstOrDefault() ?? team.First();
 					selected.OnClick();
 
 					return true;

@@ -149,7 +149,7 @@ namespace OpenRA.Scripting
 
 			// Remove the namespace and the trailing "Info"
 			return types.SelectMany(i => i.GetGenericArguments())
-				.Select(g => g.Name.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault())
+				.Select(g => g.Name.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries).Last())
 				.Select(s => s.EndsWith("Info") ? s.Remove(s.Length - 4, 4) : s)
 				.ToArray();
 		}

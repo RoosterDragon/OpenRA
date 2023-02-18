@@ -51,10 +51,9 @@ namespace OpenRA.Mods.Cnc.Activities
 
 		CPos? NextValidCell(Actor self)
 		{
-			if (minefield != null)
-				foreach (var c in minefield)
-					if (CanLayMine(self, c))
-						return c;
+			foreach (var c in minefield)
+				if (CanLayMine(self, c))
+					return c;
 
 			return null;
 		}
@@ -66,7 +65,7 @@ namespace OpenRA.Mods.Cnc.Activities
 			if (IsCanceling)
 				return true;
 
-			if ((minefield == null || minefield.Contains(self.Location)) && CanLayMine(self, self.Location))
+			if (minefield.Contains(self.Location) && CanLayMine(self, self.Location))
 			{
 				if (rearmableInfo != null && ammoPools.Any(p => p.Info.Name == minelayer.Info.AmmoPoolName && !p.HasAmmo))
 				{

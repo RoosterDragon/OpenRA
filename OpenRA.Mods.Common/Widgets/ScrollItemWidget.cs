@@ -71,7 +71,7 @@ namespace OpenRA.Mods.Common.Widgets
 
 		public static ScrollItemWidget Setup(ScrollItemWidget template, Func<bool> isSelected, Action onClick)
 		{
-			var w = template.Clone() as ScrollItemWidget;
+			var w = (ScrollItemWidget)template.Clone();
 			w.IsVisible = () => true;
 			w.IsSelected = isSelected;
 			w.OnClick = onClick;

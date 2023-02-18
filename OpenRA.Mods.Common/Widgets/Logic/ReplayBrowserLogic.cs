@@ -468,7 +468,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			{
 				var r = selectedReplay;
 				var initialName = Path.GetFileNameWithoutExtension(r.FilePath);
-				var directoryName = Path.GetDirectoryName(r.FilePath);
+				var directoryName = Unforgiving.Path.GetDirectoryName(r.FilePath);
 				var invalidChars = Path.GetInvalidFileNameChars();
 
 				ConfirmationDialogs.TextInputPrompt(modData,

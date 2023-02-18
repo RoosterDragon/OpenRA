@@ -84,7 +84,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			scrollPanel.RemoveChildren();
 			foreach (var line in modCredits ? modLines : engineLines)
 			{
-				var label = template.Clone() as LabelWidget;
+				var label = (LabelWidget)template.Clone();
 				label.GetText = () => line;
 				scrollPanel.AddChild(label);
 			}

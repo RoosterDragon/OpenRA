@@ -86,7 +86,7 @@ namespace OpenRA.Mods.Common.Lint
 				if (customLintMethods.TryGetValue(widgetType, out var checkMethods))
 				{
 					var type = modData.ObjectCreator.FindType(widgetType + "Widget");
-					var keyNames = checkMethods.SelectMany(m => (IEnumerable<string>)type.GetMethod(m).Invoke(null, new object[] { node, emitError }));
+					var keyNames = checkMethods.SelectMany(m => (IEnumerable<string>)type.GetMethodUnforgiving(m).Invoke(null, new object[] { node, emitError }));
 
 					foreach (var name in keyNames)
 						if (!namedKeys.Contains(name) && !Hotkey.TryParse(name, out var unused))
@@ -94,7 +94,7 @@ namespace OpenRA.Mods.Common.Lint
 				}
 
 				// Logic classes can declare the data key names that specify hotkeys
-				if (node.Key == "Logic" && node.Value.Nodes.Count > 0)
+				if (node.Key == "Logic" && node.Value.Nodes?.Count > 0)
 				{
 					var typeNames = FieldLoader.GetValue<string[]>(node.Key, node.Value.Value);
 					var checkArgKeys = new List<string>();

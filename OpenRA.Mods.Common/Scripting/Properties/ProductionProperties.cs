@@ -149,7 +149,7 @@ namespace OpenRA.Mods.Common.Scripting
 				var player = Self.Owner;
 				var squadSize = actorTypes.Length;
 				var squad = new List<Actor>();
-				var func = actionFunc.CopyReference() as LuaFunction;
+				var func = (LuaFunction)actionFunc.CopyReference();
 
 				Action<Actor, Actor> productionHandler = (a, b) => { };
 				productionHandler = (factory, unit) =>
@@ -257,7 +257,7 @@ namespace OpenRA.Mods.Common.Scripting
 			{
 				var squadSize = actorTypes.Length;
 				var squad = new List<Actor>();
-				var func = actionFunc.CopyReference() as LuaFunction;
+				var func = (LuaFunction)actionFunc.CopyReference();
 
 				Action<Actor, Actor> productionHandler = (factory, unit) =>
 				{

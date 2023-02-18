@@ -325,16 +325,16 @@ namespace OpenRA.FileFormats
 
 						WritePngChunk(output, "PLTE", palette);
 					}
-				}
 
-				if (alphaPalette)
-				{
-					using (var alpha = new MemoryStream())
+					if (alphaPalette)
 					{
-						foreach (var c in Palette)
-							alpha.WriteByte(c.A);
+						using (var alpha = new MemoryStream())
+						{
+							foreach (var c in Palette)
+								alpha.WriteByte(c.A);
 
-						WritePngChunk(output, "tRNS", alpha);
+							WritePngChunk(output, "tRNS", alpha);
+						}
 					}
 				}
 

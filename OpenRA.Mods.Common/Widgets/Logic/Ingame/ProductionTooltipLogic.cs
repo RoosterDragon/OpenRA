@@ -56,8 +56,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			tooltipContainer.BeforeRender = () =>
 			{
 				var tooltipIcon = getTooltipIcon();
+				if (tooltipIcon == null)
+					return;
 
-				var actor = tooltipIcon?.Actor;
+				var actor = tooltipIcon.Actor;
 				if (actor == null)
 					return;
 
@@ -124,10 +126,12 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				}
 
 				var buildTime = tooltipIcon.ProductionQueue?.GetBuildTime(actor, buildable) ?? 0;
-				var timeModifier = pm != null && pm.PowerState != PowerState.Normal ? tooltipIcon.ProductionQueue.Info.LowPowerModifier : 100;
+				var timeModifier = pm != null && pm.PowerState != PowerState.Normal && tooltipIcon.ProductionQueue != null
+					? tooltipIcon.ProductionQueue.Info.LowPowerModifier : 100;
 
 				timeLabel.Text = formatBuildTime.Update((buildTime * timeModifier) / 100);
-				timeLabel.TextColor = (pm != null && pm.PowerState != PowerState.Normal && tooltipIcon.ProductionQueue.Info.LowPowerModifier > 100) ? Color.Red : Color.White;
+				timeLabel.TextColor = (pm != null && pm.PowerState != PowerState.Normal && tooltipIcon.ProductionQueue?.Info.LowPowerModifier > 100)
+					? Color.Red : Color.White;
 				var timeSize = font.Measure(timeLabel.Text);
 
 				costLabel.Text = cost.ToString();

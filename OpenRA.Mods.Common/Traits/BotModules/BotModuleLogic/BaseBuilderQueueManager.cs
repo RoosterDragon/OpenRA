@@ -443,7 +443,7 @@ namespace OpenRA.Mods.Common.Traits
 						actorVariant = world.LocalRandom.Next(buildingVariantInfo.Actors.Length + 1);
 				}
 
-				if (actorVariant != 0)
+				if (buildingVariantInfo?.Actors != null && actorVariant != 0)
 				{
 					variantActorInfo = world.Map.Rules.Actors[buildingVariantInfo.Actors[actorVariant - 1]];
 					vbi = variantActorInfo.TraitInfoOrDefault<BuildingInfo>();

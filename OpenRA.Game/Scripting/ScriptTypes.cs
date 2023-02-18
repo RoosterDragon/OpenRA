@@ -111,7 +111,7 @@ namespace OpenRA.Scripting
 			// Translate LuaTable<int, object> -> object[]
 			if (value is LuaTable && t.IsArray)
 			{
-				var innerType = t.GetElementType();
+				var innerType = t.GetElementTypeUnforgiving();
 				var table = (LuaTable)value;
 				var array = Array.CreateInstance(innerType, table.Count);
 				var i = 0;

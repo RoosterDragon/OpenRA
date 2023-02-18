@@ -62,7 +62,7 @@ namespace OpenRA.Mods.Common.Installer
 					source.Position = entry.Offset;
 
 					extracted.Add(targetPath);
-					Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
+					Directory.CreateDirectory(Unforgiving.Path.GetDirectoryName(targetPath));
 					var displayFilename = Path.GetFileName(Path.GetFileName(targetPath));
 
 					Action<long> onProgress = null;

@@ -77,15 +77,15 @@ namespace OpenRA.Mods.Common.Terrain
 			FieldLoader.Load(tile, my);
 
 			// Terrain type must be converted from a string to an index
-			tile.GetType().GetField(nameof(tile.TerrainType)).SetValue(tile, terrainInfo.GetTerrainIndex(my.Value));
+			tile.GetType().GetFieldUnforgiving(nameof(tile.TerrainType)).SetValue(tile, terrainInfo.GetTerrainIndex(my.Value));
 
 			// Fall back to the terrain-type color if necessary
 			var overrideColor = terrainInfo.TerrainTypes[tile.TerrainType].Color;
 			if (tile.MinColor == default)
-				tile.GetType().GetField(nameof(tile.MinColor)).SetValue(tile, overrideColor);
+				tile.GetType().GetFieldUnforgiving(nameof(tile.MinColor)).SetValue(tile, overrideColor);
 
 			if (tile.MaxColor == default)
-				tile.GetType().GetField(nameof(tile.MaxColor)).SetValue(tile, overrideColor);
+				tile.GetType().GetFieldUnforgiving(nameof(tile.MaxColor)).SetValue(tile, overrideColor);
 
 			return tile;
 		}

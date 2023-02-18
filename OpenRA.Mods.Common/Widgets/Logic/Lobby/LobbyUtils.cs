@@ -380,7 +380,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			if (profile != null)
 			{
 				var imageName = (c != null && c.IsAdmin ? "admin-" : "player-")
-					+ (c.Fingerprint != null ? "registered" : "anonymous");
+					+ (c != null && c.Fingerprint != null ? "registered" : "anonymous");
 
 				profile.GetImageName = () => imageName;
 				profile.IsVisible = () => visible;

@@ -114,8 +114,8 @@ namespace OpenRA.Mods.Common.Widgets
 			Func<string, bool> inputValidator = null)
 		{
 			var panel = Ui.OpenWindow("TEXT_INPUT_PROMPT");
-			Func<bool> doValidate = null;
-			ButtonWidget acceptButton = null, cancelButton = null;
+			var acceptButton = panel.Get<ButtonWidget>("ACCEPT_BUTTON");
+			var cancelButton = panel.Get<ButtonWidget>("CANCEL_BUTTON");
 
 			var titleMessage = modData.Translation.GetString(title);
 			panel.Get<LabelWidget>("PROMPT_TITLE").GetText = () => titleMessage;
@@ -125,6 +125,23 @@ namespace OpenRA.Mods.Common.Widgets
 
 			var input = panel.Get<TextFieldWidget>("INPUT_TEXT");
 			var isValid = false;
+
+			Func<bool> doValidate = () =>
+			{
+				if (inputValidator == null)
+					return true;
+
+				isValid = inputValidator(input.Text);
+				if (isValid)
+				{
+					acceptButton.Disabled = false;
+					return true;
+				}
+
+				acceptButton.Disabled = true;
+				return false;
+			};
+
 			input.Text = initialText;
 			input.IsValid = () => isValid;
 			input.OnEnterKey = _ =>
@@ -147,7 +164,6 @@ namespace OpenRA.Mods.Common.Widgets
 			input.CursorPosition = input.Text.Length;
 			input.OnTextEdited = () => doValidate();
 
-			acceptButton = panel.Get<ButtonWidget>("ACCEPT_BUTTON");
 			if (!string.IsNullOrEmpty(acceptText))
 			{
 				var acceptTextMessage = modData.Translation.GetString(acceptText);
@@ -163,7 +179,6 @@ namespace OpenRA.Mods.Common.Widgets
 				onAccept(input.Text);
 			};
 
-			cancelButton = panel.Get<ButtonWidget>("CANCEL_BUTTON");
 			if (!string.IsNullOrEmpty(cancelText))
 			{
 				var cancelTextMessage = modData.Translation.GetString(cancelText);
@@ -174,22 +189,6 @@ namespace OpenRA.Mods.Common.Widgets
 			{
 				Ui.CloseWindow();
 				onCancel?.Invoke();
-			};
-
-			doValidate = () =>
-			{
-				if (inputValidator == null)
-					return true;
-
-				isValid = inputValidator(input.Text);
-				if (isValid)
-				{
-					acceptButton.Disabled = false;
-					return true;
-				}
-
-				acceptButton.Disabled = true;
-				return false;
 			};
 
 			doValidate();

@@ -235,7 +235,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 				// Create the item manually so the click handlers can refer to itself
 				// This simplifies the rename handling (only needs to update ItemKey)
-				var item = gameTemplate.Clone() as ScrollItemWidget;
+				var item = (ScrollItemWidget)gameTemplate.Clone();
 				item.ItemKey = savePath;
 				item.IsVisible = () => true;
 				item.IsSelected = () => selectedSave == item.ItemKey;
@@ -266,9 +266,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				File.Move(oldPath, newPath);
 
 				games[games.IndexOf(oldPath)] = newPath;
-				foreach (var c in gameList.Children)
+				foreach (var item in gameList.Children.Cast<ScrollItemWidget>())
 				{
-					if (!(c is ScrollItemWidget item) || item.ItemKey != oldPath)
+					if (item.ItemKey != oldPath)
 						continue;
 
 					item.ItemKey = newPath;
@@ -302,7 +302,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				Select(null);
 
 			var item = gameList.Children
-				.Select(c => c as ScrollItemWidget)
+				.Cast<ScrollItemWidget>()
 				.FirstOrDefault(c => c.ItemKey == savePath);
 
 			gameList.RemoveChild(item);
