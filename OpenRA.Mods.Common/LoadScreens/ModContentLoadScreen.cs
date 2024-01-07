@@ -21,6 +21,10 @@ namespace OpenRA.Mods.Common.LoadScreens
 {
 	public sealed class ModContentLoadScreen : SheetLoadScreen
 	{
+		public const string ContentPromptPanelWidgetId = "CONTENT_PROMPT_PANEL";
+		public const string ContentPanelWidgetId = "CONTENT_PANEL";
+		public const string ModContentBackgroundWidgetId = "MODCONTENT_BACKGROUND";
+
 		Sprite sprite;
 		Rectangle bounds;
 
@@ -58,7 +62,7 @@ namespace OpenRA.Mods.Common.LoadScreens
 
 			var content = selectedMod.Get<ModContent>(Game.ModData.ObjectCreator);
 
-			Ui.LoadWidget("MODCONTENT_BACKGROUND", Ui.Root, new WidgetArgs());
+			Ui.LoadWidgetUnchecked(ModContentBackgroundWidgetId, Ui.Root, new WidgetArgs());
 
 			if (!IsModInstalled(content))
 			{
@@ -70,7 +74,7 @@ namespace OpenRA.Mods.Common.LoadScreens
 					{ "translationFilePath", translationFilePath },
 				};
 
-				Ui.OpenWindow("CONTENT_PROMPT_PANEL", widgetArgs);
+				Ui.OpenWindowUnchecked(ContentPromptPanelWidgetId, widgetArgs);
 			}
 			else
 			{
@@ -82,7 +86,7 @@ namespace OpenRA.Mods.Common.LoadScreens
 					{ "translationFilePath", translationFilePath },
 				};
 
-				Ui.OpenWindow("CONTENT_PANEL", widgetArgs);
+				Ui.OpenWindowUnchecked(ContentPanelWidgetId, widgetArgs);
 			}
 		}
 
