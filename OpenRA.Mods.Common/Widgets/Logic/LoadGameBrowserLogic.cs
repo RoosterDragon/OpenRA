@@ -155,6 +155,40 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string HumanPlayer = "label-load-game-browser-panel-human-player";
 
+		public class LoadGameBrowserLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } =
+				new HashSet<string>
+				{
+					"TEXT_INPUT_PROMPT",
+					"TWOBUTTON_PROMPT",
+					"THREEBUTTON_PROMPT",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "MAP_PREVIEW", "MAP_PREVIEW_ROOT" },
+				};
+
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{
+						"LABEL_DROPDOWN_TEMPLATE",
+						new[]
+						{
+							"FLT_TYPE_DROPDOWNBUTTON",
+							"FLT_DATE_DROPDOWNBUTTON",
+							"FLT_DURATION_DROPDOWNBUTTON",
+							"FLT_MAPNAME_DROPDOWNBUTTON",
+							"FLT_FACTION_DROPDOWNBUTTON"
+						}
+					},
+				};
+		}
+
+		readonly LoadGameBrowserLogicDynamicWidgets dynamicWidgets = new();
+
 		static Filter filter = new();
 
 		readonly Widget panel;
@@ -240,7 +274,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			var spawnOccupants = new CachedTransform<GameSave, Dictionary<int, SpawnOccupant>>(_ => GetSpawnOccupants());
 
-			Ui.LoadWidget("MAP_PREVIEW", mapPreviewRoot, new WidgetArgs
+			dynamicWidgets.LoadWidget(mapPreviewRoot, "MAP_PREVIEW", new WidgetArgs
 			{
 				{ "orderManager", null },
 				{ "getMap", (Func<(MapPreview, Session.MapStatus)>)(() => (map, Session.MapStatus.Playable)) },
@@ -397,7 +431,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -431,7 +465,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -465,7 +499,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -515,7 +549,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, mapNames, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, mapNames, SetupItem);
 					};
 				}
 			}
@@ -557,7 +591,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, factions, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, factions, SetupItem);
 					};
 				}
 			}
@@ -745,7 +779,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			{
 				var initialName = Path.GetFileNameWithoutExtension(selectedPath);
 
-				ConfirmationDialogs.TextInputPrompt(modData,
+				ConfirmationDialogs.TextInputPrompt(
+					dynamicWidgets,
+					modData,
 					RenameSaveTitle,
 					RenameSavePrompt,
 					initialName,
@@ -760,7 +796,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			deleteButton.IsDisabled = () => selectedPath == null;
 			deleteButton.OnClick = () =>
 			{
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: DeleteSaveTitle,
 					text: DeleteSavePrompt,
 					textArguments: ["save", Path.GetFileNameWithoutExtension(selectedPath)],
@@ -786,7 +824,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			{
 				var visible = saves.Where(s => s.Visible).ToList();
 
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: DeleteAllSavesTitle,
 					text: DeleteAllSavesPrompt,
 					textArguments: ["count", visible.Count],

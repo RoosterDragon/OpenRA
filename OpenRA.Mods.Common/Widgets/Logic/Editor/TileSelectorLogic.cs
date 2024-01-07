@@ -26,6 +26,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		typeof(CommonSelectorLogic))]
 	public class TileSelectorLogic : CommonSelectorLogic
 	{
+		// Required so the linter can detect we use the same DynamicWidgets as our base class.
+		public class TileSelectorLogicDynamicWidgets : CommonSelectorLogicDynamicWidgets { }
+
 		sealed class TileSelectorTemplate
 		{
 			public readonly TerrainTemplateInfo Template;

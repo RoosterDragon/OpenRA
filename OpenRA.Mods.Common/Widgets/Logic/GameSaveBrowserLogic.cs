@@ -82,6 +82,24 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string NoTeam = "label-no-team";
 
+		public class GameSaveBrowserLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } =
+				new HashSet<string>
+				{
+					"TEXT_INPUT_PROMPT",
+					"TWOBUTTON_PROMPT",
+					"THREEBUTTON_PROMPT",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "MAP_PREVIEW", "MAP_PREVIEW_ROOT" },
+				};
+		}
+
+		readonly GameSaveBrowserLogicDynamicWidgets dynamicWidgets = new();
+
 		readonly Widget panel;
 		readonly ScrollPanelWidget gameList;
 		readonly TextFieldWidget saveTextField;
@@ -208,7 +226,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			var spawnOccupants = new CachedTransform<GameSave, Dictionary<int, SpawnOccupant>>(_ => GetSpawnOccupants());
 
-			Ui.LoadWidget("MAP_PREVIEW", mapPreviewRoot, new WidgetArgs
+			dynamicWidgets.LoadWidget(mapPreviewRoot, "MAP_PREVIEW", new WidgetArgs
 			{
 				{ "orderManager", null },
 				{ "getMap", (Func<(MapPreview, Session.MapStatus)>)(() => (map, Session.MapStatus.Playable)) },
@@ -226,7 +244,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			{
 				var initialName = Path.GetFileNameWithoutExtension(selectedPath);
 
-				ConfirmationDialogs.TextInputPrompt(modData,
+				ConfirmationDialogs.TextInputPrompt(
+					dynamicWidgets,
+					modData,
 					RenameSaveTitle,
 					RenameSavePrompt,
 					initialName,
@@ -241,7 +261,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			deleteButton.IsDisabled = () => selectedSave == null;
 			deleteButton.OnClick = () =>
 			{
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: DeleteSaveTitle,
 					text: DeleteSavePrompt,
 					textArguments: ["save", Path.GetFileNameWithoutExtension(selectedPath)],
@@ -258,7 +280,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			deleteAllButton.IsDisabled = () => games.Count == 0;
 			deleteAllButton.OnClick = () =>
 			{
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: DeleteAllSavesTitle,
 					text: DeleteAllSavesPrompt,
 					textArguments: ["count", games.Count],
@@ -566,7 +590,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			if (File.Exists(testPath))
 			{
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: OverwriteSaveTitle,
 					text: OverwriteSavePrompt,
 					textArguments: ["file", saveTextField.Text],

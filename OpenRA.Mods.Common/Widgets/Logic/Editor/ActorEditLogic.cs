@@ -35,6 +35,18 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[Flags]
 		enum ActorIDStatus { Normal = 0, Duplicate = 1, Empty = 3 }
 
+		public class ActorEditLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "OPTION" } },
+				};
+		}
+
+		readonly ActorEditLogicDynamicWidgets dynamicWidgets = new();
 		readonly WorldRenderer worldRenderer;
 		readonly EditorActorLayer editorActorLayer;
 		readonly EditorActionManager editorActionManager;
@@ -217,7 +229,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				ownerDropdown.OnClick = () =>
 				{
 					var owners = editorActorLayer.Players.Players.Values.OrderBy(p => p.Name);
-					ownerDropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 270, owners, SetupItem);
+					dynamicWidgets.ShowDropDown(ownerDropdown, "LABEL_DROPDOWN_TEMPLATE", 270, owners, SetupItem);
 				};
 
 				initContainer.Bounds.Height += ownerContainer.Bounds.Height;
@@ -319,7 +331,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						}
 
 						dropdown.GetText = () => labels[ddo.GetValue(SelectedActor, labels)];
-						dropdown.OnClick = () => dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 270, labels, DropdownSetup);
+						dropdown.OnClick = () => dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 270, labels, DropdownSetup);
 
 						initContainer.AddChild(dropdownContainer);
 					}

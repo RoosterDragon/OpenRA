@@ -19,6 +19,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 {
 	public class ModContentLogic : ChromeLogic
 	{
+		public const string ContentPromptPanelWidgetId = "CONTENT_PROMPT_PANEL";
+		public const string ContentPanelWidgetId = "CONTENT_PANEL";
+
 		[ObjectCreator.UseCtor]
 		public ModContentLogic(ModData modData)
 		{
@@ -32,7 +35,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					{ "content", content },
 				};
 
-				Ui.OpenWindow("CONTENT_PROMPT_PANEL", widgetArgs);
+				Ui.OpenWindowUnchecked(ContentPromptPanelWidgetId, widgetArgs);
 			}
 			else
 			{
@@ -42,7 +45,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					{ "content", content },
 				};
 
-				Ui.OpenWindow("CONTENT_PANEL", widgetArgs);
+				Ui.OpenWindowUnchecked(ContentPanelWidgetId, widgetArgs);
 			}
 		}
 
@@ -58,6 +61,19 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 	{
 		[FluentReference]
 		const string ManualInstall = "button-manual-install";
+
+		public class ModContentLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } =
+				new HashSet<string>
+				{
+					"SOURCE_INSTALL_PANEL",
+					"PACKAGE_DOWNLOAD_PANEL",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+		}
+
+		readonly ModContentLogicDynamicWidgets dynamicWidgets = new();
 
 		readonly ModContent content;
 		readonly ScrollPanelWidget scrollPanel;
@@ -97,7 +113,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			sourceButton.Bounds.Y += headerHeight;
 			sourceButton.IsVisible = () => sourceAvailable;
 
-			sourceButton.OnClick = () => Ui.OpenWindow("SOURCE_INSTALL_PANEL", new WidgetArgs
+			sourceButton.OnClick = () => dynamicWidgets.OpenWindow("SOURCE_INSTALL_PANEL", new WidgetArgs
 			{
 				{ "sources", sources },
 				{ "content", content },
@@ -149,7 +165,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						{ "onSuccess", () => { } }
 					};
 
-					downloadButton.OnClick = () => Ui.OpenWindow("PACKAGE_DOWNLOAD_PANEL", widgetArgs);
+					downloadButton.OnClick = () => dynamicWidgets.OpenWindow("PACKAGE_DOWNLOAD_PANEL", widgetArgs);
 				}
 
 				var installedWidget = container.Get<LabelWidget>("INSTALLED");

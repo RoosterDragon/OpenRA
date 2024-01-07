@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
@@ -20,6 +21,18 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 {
 	public class AudioSettingsLogic : ChromeLogic
 	{
+		public class AudioSettingsLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "AUDIO_DEVICE" } },
+				};
+		}
+
+		readonly AudioSettingsLogicDynamicWidgets dynamicWidgets = new();
 		readonly WorldRenderer worldRenderer;
 		readonly SoundSettings soundSettings;
 		static SoundSettings originalSoundSettings;
@@ -167,7 +180,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, options.Keys, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 500, options.Keys, SetupItem);
 		}
 	}
 }

@@ -108,6 +108,27 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			return $"{size.Width}x{size.Height} ({FluentProvider.GetMessage(label)})";
 		}
 
+		public class MapChooserLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } =
+				new HashSet<string>
+				{
+					"TWOBUTTON_PROMPT",
+					"THREEBUTTON_PROMPT",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "MAPCHOOSER_GENERATE_PANEL", "GENERATE_MAP_TAB" }
+				};
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "GAMEMODE_FILTER", "ORDERBY" } },
+				};
+		}
+
+		readonly MapChooserLogicDynamicWidgets dynamicWidgets = new();
 		readonly string allMaps;
 
 		readonly Widget widget;
@@ -412,7 +433,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			var tabContainer = widget.Get<ContainerWidget>(tabContainerName);
 			tabContainer.IsVisible = () => currentTab == tab;
-			Ui.LoadWidget("MAPCHOOSER_GENERATE_PANEL", tabContainer, new WidgetArgs
+			dynamicWidgets.LoadWidget(tabContainer, "MAPCHOOSER_GENERATE_PANEL", new WidgetArgs
 			{
 				{ "modData", modData },
 				{ "initialGeneratedMap", initialGeneratedMap },
@@ -462,7 +483,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				}
 
 				gameModeDropdown.OnClick = () =>
-					gameModeDropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 210, categories, SetupItem);
+					dynamicWidgets.ShowDropDown(gameModeDropdown, "LABEL_DROPDOWN_TEMPLATE", 210, categories, SetupItem);
 
 				gameModeDropdown.GetText = () =>
 				{
@@ -504,7 +525,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			}
 
 			orderByDropdown.OnClick = () =>
-				orderByDropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, orderByDict.Keys, SetupItem);
+				dynamicWidgets.ShowDropDown(orderByDropdown, "LABEL_DROPDOWN_TEMPLATE", 500, orderByDict.Keys, SetupItem);
 
 			orderByDropdown.GetText = () =>
 				orderByDict.FirstOrDefault(m => m.Value == orderByFunc).Key;
@@ -618,7 +639,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		void DeleteOneMap(string map, Action<string> after)
 		{
-			ConfirmationDialogs.ButtonPrompt(modData,
+			ConfirmationDialogs.ButtonPrompt(
+				dynamicWidgets,
+				modData,
 				title: DeleteMapTitle,
 				text: DeleteMapPrompt,
 				textArguments: ["title", modData.MapCache[map].Title],
@@ -633,7 +656,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		void DeleteAllMaps(string[] maps, Action<string> after)
 		{
-			ConfirmationDialogs.ButtonPrompt(modData,
+			ConfirmationDialogs.ButtonPrompt(
+				dynamicWidgets,
+				modData,
 				title: DeleteAllMapsTitle,
 				text: DeleteAllMapsPrompt,
 				onConfirm: () =>

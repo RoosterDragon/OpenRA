@@ -25,6 +25,26 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		readonly Dictionary<Widget, string> toolLabels = [];
 		readonly Widget widget;
 		Widget selectedPanel;
+		public class MapToolsLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					// TODO: Hardcoded from IEditorTool trait defaults - should either be loaded from the traitinfo,
+					// or the traits rewritten to avoid this flexible lookup for the panel.
+					{ "MAP_GENERATOR_TOOL_PANEL", "TOOLS_WIDGETS" },
+					{ "MARKER_TOOL_PANEL", "TOOLS_WIDGETS" },
+					{ "TILING_PATH_TOOL_PANEL", "TOOLS_WIDGETS" },
+				};
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "TOOLS_DROPDOWN" } },
+				};
+		}
+
+		readonly MapToolsLogicDynamicWidgets dynamicWidgets = new();
 
 		[ObjectCreator.UseCtor]
 		public MapToolsLogic(Widget widget, World world)
@@ -39,7 +59,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				if (!tool.IsEnabled)
 					continue;
 
-				var panel = Game.LoadWidget(world, tool.PanelWidget, widget, new WidgetArgs() { { "tool", tool } });
+				var panel = dynamicWidgets.LoadWidget(widget, tool.PanelWidget, new WidgetArgs() { { "tool", tool } });
 				toolPanels.Add(panel);
 				toolLabels.Add(panel, FluentProvider.GetMessage(tool.Label));
 			}
@@ -69,7 +89,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 150, toolPanels, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 150, toolPanels, SetupItem);
 		}
 
 		void SelectTool(Widget panel)

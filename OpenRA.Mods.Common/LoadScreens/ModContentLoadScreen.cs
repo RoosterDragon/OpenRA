@@ -18,6 +18,8 @@ namespace OpenRA.Mods.Common.LoadScreens
 {
 	public sealed class ModContentLoadScreen : SheetLoadScreen
 	{
+		public const string ModContentBackgroundWidgetId = "MODCONTENT_BACKGROUND";
+
 		Sprite sprite;
 		Rectangle bounds;
 
@@ -45,7 +47,7 @@ namespace OpenRA.Mods.Common.LoadScreens
 
 		public override void StartGame(Arguments args)
 		{
-			Ui.LoadWidget("MODCONTENT_BACKGROUND", Ui.Root, []);
+			Ui.LoadWidgetUnchecked(ModContentBackgroundWidgetId, Ui.Root, []);
 		}
 
 		public override bool BeforeLoad(ModData modData)

@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using OpenRA.Graphics;
 using OpenRA.Widgets;
 
@@ -17,6 +18,18 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 {
 	public class LocalProfileLogic : ChromeLogic
 	{
+		public class LocalProfileLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "PLAYER_PROFILE_BADGES_INSERT", "BADGES_CONTAINER" },
+				};
+		}
+
+		readonly LocalProfileLogicDynamicWidgets dynamicWidgets = new();
+
 		readonly WorldRenderer worldRenderer;
 		readonly LocalPlayerProfile localProfile;
 		readonly Widget badgeContainer;
@@ -67,7 +80,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				{
 					Func<int, int> negotiateWidth = _ => widget.Get("PROFILE_HEADER").Bounds.Width;
 
-					var badges = Ui.LoadWidget("PLAYER_PROFILE_BADGES_INSERT", badgeContainer, new WidgetArgs()
+					var badges = dynamicWidgets.LoadWidget(widget, "PLAYER_PROFILE_BADGES_INSERT", new WidgetArgs()
 						{
 							{ "worldRenderer", worldRenderer },
 							{ "profile", localProfile.ProfileData },

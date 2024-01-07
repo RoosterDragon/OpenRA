@@ -38,6 +38,19 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					yield return (node.Key, new FluentReferenceAttribute());
 		}
 
+		public class HotkeysSettingsLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "CONTEXT_DROPDOWN" } },
+				};
+		}
+
+		readonly HotkeysSettingsLogicDynamicWidgets dynamicWidgets = new();
+
 		readonly ModData modData;
 		readonly Dictionary<string, MiniYaml> logicArgs;
 
@@ -363,7 +376,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 280, contexts, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 280, contexts, SetupItem);
 
 			return true;
 		}

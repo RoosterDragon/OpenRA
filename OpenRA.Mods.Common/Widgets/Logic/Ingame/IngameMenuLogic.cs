@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using OpenRA.Graphics;
 using OpenRA.Mods.Common.Scripting;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Widgets;
@@ -139,6 +138,30 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string ExitToMapEditorCancel = "dialog-exit-to-map-editor.cancel";
 
+		public class IngameMenuLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } =
+				new HashSet<string>
+				{
+					"CONNECTING_PANEL",
+					"LOAD_GAME_BROWSER_PANEL",
+					"GAMESAVE_BROWSER_PANEL",
+					"MUSIC_PANEL",
+					"SETTINGS_PANEL",
+					"SAVE_MAP_PANEL",
+					"SERVER_LOBBY",
+					"MISSIONBROWSER_PANEL",
+					"TWOBUTTON_PROMPT",
+					"THREEBUTTON_PROMPT",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "GAME_INFO_PANEL", "PANEL_ROOT" },
+				};
+		}
+
+		readonly IngameMenuLogicDynamicWidgets dynamicWidgets = new();
 		readonly Widget menu;
 		readonly Widget buttonContainer;
 		readonly ButtonWidget buttonTemplate;
@@ -148,7 +171,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		readonly ModData modData;
 		readonly Action onExit;
 		readonly World world;
-		readonly WorldRenderer worldRenderer;
 		readonly MenuPostProcessEffect mpe;
 		readonly bool isSinglePlayer;
 		readonly bool hasError;
@@ -158,12 +180,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		static bool lastGameEditor = false;
 
 		[ObjectCreator.UseCtor]
-		public IngameMenuLogic(Widget widget, ModData modData, World world, Action onExit, WorldRenderer worldRenderer,
+		public IngameMenuLogic(Widget widget, ModData modData, World world, Action onExit,
 			IngameInfoPanel initialPanel, Dictionary<string, MiniYaml> logicArgs)
 		{
 			this.modData = modData;
 			this.world = world;
-			this.worldRenderer = worldRenderer;
 			this.onExit = onExit;
 
 			var buttonHandlers = new Dictionary<string, Action>
@@ -221,7 +242,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			if (panelRoot != null && world.Type != WorldType.Editor)
 			{
 				Action<bool> requestHideMenu = h => hideMenu = h;
-				var gameInfoPanel = Game.LoadWidget(world, "GAME_INFO_PANEL", panelRoot, new WidgetArgs()
+				var gameInfoPanel = dynamicWidgets.LoadWidget(widget, "GAME_INFO_PANEL", new WidgetArgs()
 				{
 					{ "initialPanel", initialPanel },
 					{ "hideMenu", requestHideMenu },
@@ -330,7 +351,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			{
 				hideMenu = true;
 
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: LeaveMissionTitle,
 					text: LeaveMissionPrompt,
 					onConfirm: () => { OnQuit(world); leaving = true; },
@@ -366,7 +389,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			button.OnClick = () =>
 			{
 				hideMenu = true;
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: RestartMissionTitle,
 					text: RestartMissionPrompt,
 					onConfirm: OnRestart,
@@ -392,7 +417,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			button.OnClick = () =>
 			{
 				hideMenu = true;
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: SurrenderTitle,
 					text: SurrenderPrompt,
 					onConfirm: OnSurrender,
@@ -412,7 +439,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			button.OnClick = () =>
 			{
 				hideMenu = true;
-				Ui.OpenWindow("LOAD_GAME_BROWSER_PANEL", new WidgetArgs
+				dynamicWidgets.OpenWindow("LOAD_GAME_BROWSER_PANEL", new WidgetArgs
 				{
 					{ "onExit", () => hideMenu = false },
 					{ "onStart", CloseMenu },
@@ -430,11 +457,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			button.OnClick = () =>
 			{
 				hideMenu = true;
-				Ui.OpenWindow("GAMESAVE_BROWSER_PANEL", new WidgetArgs
+				dynamicWidgets.OpenWindow("GAMESAVE_BROWSER_PANEL", new WidgetArgs
 				{
 					{ "onExit", () => hideMenu = false },
 					{ "onStart", () => { } },
-					{ "world", world }
 				});
 			};
 		}
@@ -445,10 +471,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			button.OnClick = () =>
 			{
 				hideMenu = true;
-				Ui.OpenWindow("MUSIC_PANEL", new WidgetArgs()
+				dynamicWidgets.OpenWindow("MUSIC_PANEL", new WidgetArgs()
 				{
 					{ "onExit", () => hideMenu = false },
-					{ "world", world }
 				});
 			};
 		}
@@ -459,10 +484,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			button.OnClick = () =>
 			{
 				hideMenu = true;
-				Ui.OpenWindow("SETTINGS_PANEL", new WidgetArgs()
+				dynamicWidgets.OpenWindow("SETTINGS_PANEL", new WidgetArgs()
 				{
-					{ "world", world },
-					{ "worldRenderer", worldRenderer },
 					{ "onExit", () => hideMenu = false },
 				});
 			};
@@ -492,7 +515,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				var playerCount = new MapPlayers(playerDefinitions).Players.Count;
 				if (playerCount > MapPlayers.MaximumPlayerCount)
 				{
-					ConfirmationDialogs.ButtonPrompt(modData,
+					ConfirmationDialogs.ButtonPrompt(
+						dynamicWidgets,
+						modData,
 						title: ErrorMaxPlayerTitle,
 						text: ErrorMaxPlayerPrompt,
 						textArguments: ["players", playerCount, "max", MapPlayers.MaximumPlayerCount],
@@ -502,12 +527,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					return;
 				}
 
-				Ui.OpenWindow("SAVE_MAP_PANEL", new WidgetArgs()
+				dynamicWidgets.OpenWindow("SAVE_MAP_PANEL", new WidgetArgs()
 				{
 					{ "onSave", (Action<string>)(_ => { ShowMenu(); actionManager.Modified = false; }) },
 					{ "onExit", CloseMenu },
 					{ "map", world.Map },
-					{ "world", world },
 					{ "playerDefinitions", playerDefinitions },
 					{ "actorDefinitions", editorActorLayer.Save() }
 				});
@@ -529,7 +553,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					var map = uid == null ? null : modData.MapCache[uid];
 					if (map == null || (map.Visibility != MapVisibility.Lobby && map.Visibility != MapVisibility.MissionSelector))
 					{
-						ConfirmationDialogs.ButtonPrompt(modData,
+						ConfirmationDialogs.ButtonPrompt(
+							dynamicWidgets,
+							modData,
 							title: PlayMapWarningTitle,
 							text: PlayMapWarningPrompt,
 							onCancel: ShowMenu,
@@ -553,9 +579,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						if (map.Visibility == MapVisibility.Lobby)
 						{
 							// HACK: Server lobby should be usable without a server.
-							ConnectionLogic.Connect(Game.CreateLocalServer(uid),
+							ConnectionLogic.Connect(dynamicWidgets, Game.CreateLocalServer(uid),
 								"",
-								() => Game.OpenWindow("SERVER_LOBBY", new WidgetArgs
+								() => dynamicWidgets.OpenWindow("SERVER_LOBBY", new WidgetArgs
 								{
 									{ "onExit", CloseMenu },
 									{ "onStart", () => { } },
@@ -565,7 +591,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						}
 						else if (map.Visibility == MapVisibility.MissionSelector)
 						{
-							Game.OpenWindow("MISSIONBROWSER_PANEL", new WidgetArgs
+							dynamicWidgets.OpenWindow("MISSIONBROWSER_PANEL", new WidgetArgs
 							{
 								{ "onExit", CloseMenu },
 								{ "onStart", () => { } },
@@ -598,7 +624,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						}
 					}
 
-					ConfirmationDialogs.ButtonPrompt(modData,
+					ConfirmationDialogs.ButtonPrompt(
+						dynamicWidgets,
+						modData,
 						title: ExitToMapEditorTitle,
 						text: ExitToMapEditorPrompt,
 						onConfirm: OnConfirm,
@@ -630,7 +658,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			if (actionManager.HasUnsavedItems() || deletedOrUnavailable)
 			{
 				hideMenu = true;
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: ExitMapEditorTitle,
 					text: deletedOrUnavailable ? ExitMapEditorPromptDeleted : ExitMapEditorPromptUnsaved,
 					onConfirm: () => { onSuccess(); leaving = true; },

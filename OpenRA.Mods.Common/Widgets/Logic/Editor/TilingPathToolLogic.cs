@@ -24,6 +24,19 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		typeof(TilingPathToolInfo))]
 	public sealed class TilingPathToolLogic : ChromeLogic
 	{
+		public class TilingPathToolLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "DROPDOWN" } },
+				};
+		}
+
+		readonly TilingPathToolLogicDynamicWidgets dynamicWidgets = new();
+
 		readonly Widget widget;
 		readonly EditorViewportControllerWidget editor;
 		readonly TilingPathTool tool;
@@ -45,7 +58,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			((ScrollPanelWidget)widget).Layout.AdjustChildren();
 
-			void SetupDropDown(
+			static void SetupDropDown(
+				DynamicWidgets dynamicWidgets,
 				DropDownButtonWidget dropDown,
 				ImmutableArray<string> choices,
 				Func<string> read,
@@ -63,7 +77,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					}
 
 					var maxHeight = Math.Min(dropDown.Parent.Bounds.Width, choices.Length * 30);
-					dropDown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", maxHeight, choices, SetupItem);
+					dynamicWidgets.ShowDropDown(dropDown, "LABEL_DROPDOWN_TEMPLATE", maxHeight, choices, SetupItem);
 				};
 			}
 
@@ -82,17 +96,17 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				.Get<DropDownButtonWidget>("DROPDOWN");
 			innerDropDown.GetText = () => tool.InnerType;
 
-			SetupDropDown(startDropdown, tool.StartTypesByInner[tool.InnerType], () => tool.StartType, tool.SetStartType);
-			SetupDropDown(endDropdown, tool.EndTypesByInner[tool.InnerType], () => tool.EndType, tool.SetEndType);
+			SetupDropDown(dynamicWidgets, startDropdown, tool.StartTypesByInner[tool.InnerType], () => tool.StartType, tool.SetStartType);
+			SetupDropDown(dynamicWidgets, endDropdown, tool.EndTypesByInner[tool.InnerType], () => tool.EndType, tool.SetEndType);
 
 			void PickInnerType(string choice)
 			{
 				tool.SetInnerType(choice);
-				SetupDropDown(startDropdown, tool.StartTypesByInner[choice], () => tool.StartType, tool.SetStartType);
-				SetupDropDown(endDropdown, tool.EndTypesByInner[choice], () => tool.EndType, tool.SetEndType);
+				SetupDropDown(dynamicWidgets, startDropdown, tool.StartTypesByInner[choice], () => tool.StartType, tool.SetStartType);
+				SetupDropDown(dynamicWidgets, endDropdown, tool.EndTypesByInner[choice], () => tool.EndType, tool.SetEndType);
 			}
 
-			SetupDropDown(innerDropDown, tool.InnerTypes, () => tool.InnerType, PickInnerType);
+			SetupDropDown(dynamicWidgets, innerDropDown, tool.InnerTypes, () => tool.InnerType, PickInnerType);
 
 			var deviationSlider = widget.Get<ContainerWidget>("DEVIATION").Get<SliderWidget>("SLIDER");
 			deviationSlider.GetValue = () => tool.MaxDeviation;

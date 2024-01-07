@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using OpenRA.FileSystem;
 using OpenRA.Mods.Common.Terrain;
@@ -20,6 +21,21 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 {
 	public class NewMapLogic : ChromeLogic
 	{
+		public class NewMapLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = new HashSet<string>
+			{
+				"SAVE_MAP_PANEL",
+			};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "TILESET" } },
+				};
+		}
+
+		readonly NewMapLogicDynamicWidgets dynamicWidgets = new();
 		readonly Widget panel;
 
 		[ObjectCreator.UseCtor]
@@ -45,7 +61,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var label = new CachedTransform<ITerrainInfo, string>(ti => FluentProvider.GetMessage(ti.Name));
 			tilesetDropDown.GetText = () => label.Update(selectedTerrain);
 			tilesetDropDown.OnClick = () =>
-				tilesetDropDown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 210, modData.DefaultTerrainInfo.Values, SetupItem);
+				dynamicWidgets.ShowDropDown(tilesetDropDown, "LABEL_DROPDOWN_TEMPLATE", 210, modData.DefaultTerrainInfo.Values, SetupItem);
 
 			var widthTextField = panel.Get<TextFieldWidget>("WIDTH");
 			var heightTextField = panel.Get<TextFieldWidget>("HEIGHT");
