@@ -39,8 +39,20 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string Joystick = "options-mouse-scroll-type.joystick";
 
-		readonly GameSettings gameSettings;
+		public class InputSettingsLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "MOUSE_CONTROL_DROPDOWN", "MOUSE_SCROLL_TYPE_DROPDOWN", "ZOOM_MODIFIER" } },
+				};
+		}
 
+		readonly InputSettingsLogicDynamicWidgets dynamicWidgets = new();
+
+		readonly GameSettings gameSettings;
 		readonly Dictionary<MouseControlStyle, string> controlTypes;
 
 		[ObjectCreator.UseCtor]
@@ -69,11 +81,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			SettingsUtils.BindSliderPref(panel, "UI_SCROLLSPEED_SLIDER", gameSettings, "UIScrollSpeed");
 
 			var mouseControlDropdown = panel.Get<DropDownButtonWidget>("MOUSE_CONTROL_DROPDOWN");
-			mouseControlDropdown.OnMouseDown = _ => ShowMouseControlDropdown(mouseControlDropdown, controlTypes, gameSettings);
+			mouseControlDropdown.OnMouseDown = _ => ShowMouseControlDropdown(dynamicWidgets, mouseControlDropdown, controlTypes, gameSettings);
 			mouseControlDropdown.GetText = () => controlTypes[gameSettings.MouseControlStyle];
 
 			var mouseScrollDropdown = panel.Get<DropDownButtonWidget>("MOUSE_SCROLL_TYPE_DROPDOWN");
-			mouseScrollDropdown.OnMouseDown = _ => ShowMouseScrollDropdown(mouseScrollDropdown, gameSettings);
+			mouseScrollDropdown.OnMouseDown = _ => ShowMouseScrollDropdown(dynamicWidgets, mouseScrollDropdown, gameSettings);
 
 			// MouseScroll can change, must display latest value.
 #pragma warning disable IDE0200 // Remove unnecessary lambda expression
@@ -125,7 +137,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			};
 
 			var zoomModifierDropdown = panel.Get<DropDownButtonWidget>("ZOOM_MODIFIER");
-			zoomModifierDropdown.OnMouseDown = _ => ShowZoomModifierDropdown(zoomModifierDropdown, gameSettings);
+			zoomModifierDropdown.OnMouseDown = _ => ShowZoomModifierDropdown(dynamicWidgets, zoomModifierDropdown, gameSettings);
 
 			// ZoomModifier can change, must display latest value.
 #pragma warning disable IDE0200 // Remove unnecessary lambda expression
@@ -160,7 +172,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			};
 		}
 
-		public static void ShowMouseControlDropdown(DropDownButtonWidget dropdown, Dictionary<MouseControlStyle, string> controlTypes, GameSettings gameSettings)
+		public static void ShowMouseControlDropdown(
+			DynamicWidgets dynamicWidgets,
+			DropDownButtonWidget dropdown, Dictionary<MouseControlStyle, string> controlTypes, GameSettings gameSettings)
 		{
 			ScrollItemWidget SetupItem(MouseControlStyle o, ScrollItemWidget itemTemplate)
 			{
@@ -173,10 +187,12 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, controlTypes.Keys, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 500, controlTypes.Keys, SetupItem);
 		}
 
-		static void ShowMouseScrollDropdown(DropDownButtonWidget dropdown, GameSettings gameSettings)
+		static void ShowMouseScrollDropdown(
+			InputSettingsLogicDynamicWidgets dynamicWidgets,
+			DropDownButtonWidget dropdown, GameSettings gameSettings)
 		{
 			var options = new Dictionary<string, MouseScrollType>()
 			{
@@ -195,10 +211,12 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, options.Keys, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 500, options.Keys, SetupItem);
 		}
 
-		static void ShowZoomModifierDropdown(DropDownButtonWidget dropdown, GameSettings gameSettings)
+		static void ShowZoomModifierDropdown(
+			InputSettingsLogicDynamicWidgets dynamicWidgets,
+			DropDownButtonWidget dropdown, GameSettings gameSettings)
 		{
 			var options = new Dictionary<string, Modifiers>()
 			{
@@ -218,7 +236,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, options.Keys, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 500, options.Keys, SetupItem);
 		}
 
 		static void MakeMouseFocusSettingsLive(GameSettings gameSettings)

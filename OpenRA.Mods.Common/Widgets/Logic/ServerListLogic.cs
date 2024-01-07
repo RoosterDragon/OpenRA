@@ -92,6 +92,23 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string UnknownServerState = "label-unknown-server-state";
 
+		public class ServerListLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "MULTIPLAYER_CLIENT_LIST", "CLIENT_LIST_CONTAINER" },
+					{ "MULTIPLAYER_FILTER_PANEL", "FILTERS_DROPDOWNBUTTON" },
+				};
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId =>
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "MULTIPLAYER_FILTER_PANEL", new[] { "FILTERS_DROPDOWNBUTTON" } },
+				};
+		}
+
+		readonly ServerListLogicDynamicWidgets dynamicWidgets = new();
 		readonly string noServerSelected;
 		readonly string mapStatusSearching;
 		readonly string mapClassificationUnknown;
@@ -248,7 +265,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				// HACK: MULTIPLAYER_FILTER_PANEL doesn't follow our normal procedure for dropdown creation
 				// but we still need to be able to set the dropdown width based on the parent
 				// The yaml should use PARENT_WIDTH instead of DROPDOWN_WIDTH
-				var filtersPanel = Ui.LoadWidget("MULTIPLAYER_FILTER_PANEL", filtersButton, []);
+				var filtersPanel = dynamicWidgets.LoadWidget(filtersButton, "MULTIPLAYER_FILTER_PANEL", []);
 				filtersButton.Children.Remove(filtersPanel);
 
 				var showWaitingCheckbox = filtersPanel.GetOrNull<CheckboxWidget>("WAITING_FOR_PLAYERS");
@@ -290,7 +307,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				filtersButton.OnMouseDown = _ =>
 				{
 					filtersButton.RemovePanel();
-					filtersButton.AttachPanel(filtersPanel);
+					dynamicWidgets.AttachPanel(filtersButton, filtersPanel);
 				};
 			}
 
@@ -398,7 +415,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			clientContainer = widget.GetOrNull("CLIENT_LIST_CONTAINER");
 			if (clientContainer != null)
 			{
-				clientList = Ui.LoadWidget("MULTIPLAYER_CLIENT_LIST", clientContainer, []) as ScrollPanelWidget;
+				clientList = dynamicWidgets.LoadWidget(clientContainer, "MULTIPLAYER_CLIENT_LIST", []) as ScrollPanelWidget;
 				clientList.IsVisible = () => currentServer != null && currentServer.Clients.Length > 0;
 				clientHeader = clientList.Get<ScrollItemWidget>("HEADER");
 				clientTemplate = clientList.Get<ScrollItemWidget>("TEMPLATE");

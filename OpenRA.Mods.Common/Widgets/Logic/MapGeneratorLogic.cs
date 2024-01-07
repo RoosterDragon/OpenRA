@@ -69,6 +69,20 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string PreviewVisibilityNone = "label-mapchooser-random-map-preview-visibility-none";
 
+		public class MapGeneratorLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "DROPDOWN" } },
+					{ "LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", new[] { "DROPDOWN" } },
+				};
+		}
+
+		readonly MapGeneratorLogicDynamicWidgets dynamicWidgets = new();
+
 		public static readonly IReadOnlyDictionary<string, int2> MapSizes = new Dictionary<string, int2>()
 		{
 			{ MapSizeSmall, new int2(48, 60) },
@@ -186,7 +200,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					return item;
 				}
 
-				tilesetDropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", validTerrainInfos.Count * 30, validTerrainInfos, SetupItem);
+				dynamicWidgets.ShowDropDown(tilesetDropdown, "LABEL_DROPDOWN_TEMPLATE", validTerrainInfos.Count * 30, validTerrainInfos, SetupItem);
 			};
 
 			var sizeLabel = FluentProvider.GetMessage(MapSize);
@@ -214,7 +228,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					return item;
 				}
 
-				sizeDropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", MapSizes.Count * 30, MapSizes.Keys, SetupItem);
+				dynamicWidgets.ShowDropDown(sizeDropdown, "LABEL_DROPDOWN_TEMPLATE", MapSizes.Count * 30, MapSizes.Keys, SetupItem);
 			};
 
 			var previewVisibilityLabel = FluentProvider.GetMessage(PreviewVisibility);
@@ -248,7 +262,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					return item;
 				}
 
-				previewVisibilityDropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", PreviewVisibilities.Count * 30, PreviewVisibilities.Keys, SetupItem);
+				dynamicWidgets.ShowDropDown(previewVisibilityDropdown, "LABEL_DROPDOWN_TEMPLATE", PreviewVisibilities.Count * 30, PreviewVisibilities.Keys, SetupItem);
 			};
 
 			var generateButton = widget.Get<ButtonWidget>("BUTTON_GENERATE");
@@ -471,7 +485,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 								return item;
 							}
 
-							dropDownWidget.ShowDropDown("LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, mio.Choices, SetupItem);
+							dynamicWidgets.ShowDropDown(dropDownWidget, "LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, mio.Choices, SetupItem);
 						};
 						break;
 					}
@@ -517,7 +531,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 								return item;
 							}
 
-							dropDownWidget.ShowDropDown("LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, validChoices, SetupItem);
+							dynamicWidgets.ShowDropDown(dropDownWidget, "LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, validChoices, SetupItem);
 						};
 
 						break;

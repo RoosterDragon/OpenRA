@@ -108,6 +108,41 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		static Filter filter = new();
 
+		public class ReplayBrowserLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } =
+				new HashSet<string>
+				{
+					"TEXT_INPUT_PROMPT",
+					"TWOBUTTON_PROMPT",
+					"THREEBUTTON_PROMPT",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "MAP_PREVIEW", "MAP_PREVIEW_ROOT" },
+				};
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{
+						"LABEL_DROPDOWN_TEMPLATE",
+						new[]
+						{
+							"FLT_GAMETYPE_DROPDOWNBUTTON",
+							"FLT_DATE_DROPDOWNBUTTON",
+							"FLT_DURATION_DROPDOWNBUTTON",
+							"FLT_OUTCOME_DROPDOWNBUTTON",
+							"FLT_MAPNAME_DROPDOWNBUTTON",
+							"FLT_PLAYER_DROPDOWNBUTTON",
+							"FLT_FACTION_DROPDOWNBUTTON",
+						}
+					},
+				};
+		}
+
+		readonly ReplayBrowserLogicDynamicWidgets dynamicWidgets = new();
+
 		readonly Widget panel;
 		readonly ScrollPanelWidget replayList, playerList;
 		readonly ScrollItemWidget playerTemplate, playerHeader;
@@ -170,9 +205,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			var disabledSpawnPoints = new CachedTransform<ReplayMetadata, FrozenSet<int>>(r => r.GameInfo.DisabledSpawnPoints ?? []);
 
-			Ui.LoadWidget("MAP_PREVIEW", mapPreviewRoot, new WidgetArgs
+			dynamicWidgets.LoadWidget(mapPreviewRoot, "MAP_PREVIEW", new WidgetArgs
 			{
-				{ "orderManager", null },
 				{ "getMap", (Func<(MapPreview, Session.MapStatus)>)(() => (map, Session.MapStatus.Playable)) },
 				{ "onMouseDown", null },
 				{ "getSpawnOccupants", (Func<Dictionary<int, SpawnOccupant>>)(() => spawnOccupants.Update(selectedReplay)) },
@@ -254,7 +288,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -290,7 +324,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -325,7 +359,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -360,7 +394,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -398,7 +432,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -428,7 +462,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -460,7 +494,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 							return item;
 						}
 
-						ddb.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
+						dynamicWidgets.ShowDropDown(ddb, "LABEL_DROPDOWN_TEMPLATE", 330, options, SetupItem);
 					};
 				}
 			}
@@ -477,7 +511,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				var directoryName = Path.GetDirectoryName(r.FilePath);
 				var invalidChars = Path.GetInvalidFileNameChars();
 
-				ConfirmationDialogs.TextInputPrompt(modData,
+				ConfirmationDialogs.TextInputPrompt(
+					dynamicWidgets,
+					modData,
 					RenameReplayTitle,
 					RenameReplayPrompt,
 					initialName,
@@ -505,7 +541,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			void OnDeleteReplay(ReplayMetadata r, Action after)
 			{
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: DeleteReplayTitle,
 					text: DeleteReplayPrompt,
 					textArguments: ["replay", Path.GetFileNameWithoutExtension(r.FilePath)],
@@ -543,7 +581,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					return;
 				}
 
-				ConfirmationDialogs.ButtonPrompt(modData,
+				ConfirmationDialogs.ButtonPrompt(
+					dynamicWidgets,
+					modData,
 					title: DeleteAllReplaysTitle,
 					text: DeleteAllReplaysPrompt,
 					textArguments: ["count", list.Count],
@@ -777,7 +817,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		void WatchReplay()
 		{
-			if (selectedReplay != null && ReplayUtils.PromptConfirmReplayCompatibility(selectedReplay, modData))
+			if (selectedReplay != null && ReplayUtils.PromptConfirmReplayCompatibility(dynamicWidgets, selectedReplay, modData))
 			{
 				cancelLoadingReplays = true;
 

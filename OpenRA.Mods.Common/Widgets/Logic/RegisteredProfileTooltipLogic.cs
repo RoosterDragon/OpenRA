@@ -10,9 +10,9 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using OpenRA.Graphics;
 using OpenRA.Network;
 using OpenRA.Support;
 using OpenRA.Widgets;
@@ -27,12 +27,24 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string LoadingPlayerProfileFailed = "label-loading-player-profile-failed";
 
+		public class RegisteredProfileTooltipLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "PLAYER_PROFILE_BADGES_INSERT", "BADGES_CONTAINER" },
+				};
+		}
+
+		readonly RegisteredProfileTooltipLogicDynamicWidgets dynamicWidgets = new();
+
 		readonly PlayerDatabase playerDatabase;
 		PlayerProfile profile;
 		bool profileLoaded;
 
 		[ObjectCreator.UseCtor]
-		public RegisteredProfileTooltipLogic(Widget widget, WorldRenderer worldRenderer, ModData modData, Session.Client client)
+		public RegisteredProfileTooltipLogic(Widget widget, ModData modData, Session.Client client)
 		{
 			playerDatabase = modData.GetOrCreate<PlayerDatabase>();
 
@@ -106,11 +118,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 							if (profile.Badges.Count > 0)
 							{
-								var badges = Ui.LoadWidget("PLAYER_PROFILE_BADGES_INSERT", badgeContainer, new WidgetArgs()
+								var badges = dynamicWidgets.LoadWidget(widget, "PLAYER_PROFILE_BADGES_INSERT", new WidgetArgs()
 								{
-									{ nameof(worldRenderer), worldRenderer },
-									{ nameof(profile), profile },
-									{ nameof(negotiateWidth), negotiateWidth }
+									{ "profile", profile },
+									{ "negotiateWidth", negotiateWidth }
 								});
 
 								if (badges.Bounds.Height > 0)

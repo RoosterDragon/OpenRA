@@ -36,6 +36,22 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[FluentReference]
 		const string MapGeneratorFailedCancel = "dialog-notification-map-generator-failed.cancel";
 
+		public class MapGeneratorToolLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = new HashSet<string>
+				{
+					"TWOBUTTON_PROMPT",
+				};
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "GENERATOR" } },
+					{ "LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", new[] { "DROPDOWN" } },
+				};
+		}
+
+		readonly MapGeneratorToolLogicDynamicWidgets dynamicWidgets = new();
 		readonly EditorActionManager editorActionManager;
 		readonly World world;
 		readonly WorldRenderer worldRenderer;
@@ -208,7 +224,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 								return item;
 							}
 
-							dropDownWidget.ShowDropDown("LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, mio.Choices, SetupItem);
+							dynamicWidgets.ShowDropDown(dropDownWidget, "LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, mio.Choices, SetupItem);
 						};
 						break;
 					}
@@ -249,7 +265,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 								return item;
 							}
 
-							dropDownWidget.ShowDropDown("LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, validChoices, SetupItem);
+							dynamicWidgets.ShowDropDown(dropDownWidget, "LABEL_DROPDOWN_WITH_TOOLTIP_TEMPLATE", 250, validChoices, SetupItem);
 						};
 
 						break;
@@ -271,7 +287,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			var message = e is MapGenerationException ? e.Message : MapGeneratorFailedPrompt;
 			Log.Write("debug", e);
-			ConfirmationDialogs.ButtonPrompt(modData,
+			ConfirmationDialogs.ButtonPrompt(
+				dynamicWidgets,
+				modData,
 				title: MapGeneratorFailedTitle,
 				text: message,
 				onCancel: () => { },

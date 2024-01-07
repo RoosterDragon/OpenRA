@@ -57,8 +57,21 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		[FluentReference]
 		const string AutoSaveMaxFileNumber = "auto-save-max-file-number";
-		readonly int[] autoSaveSeconds = [0, 10, 30, 45, 60, 120, 180, 300, 600];
 
+		public class GameplaySettingsLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } = EmptyDictionary;
+			public override IReadOnlyDictionary<string, IReadOnlyCollection<string>> ParentDropdownWidgetIdsFromPanelWidgetId { get; } =
+				new Dictionary<string, IReadOnlyCollection<string>>
+				{
+					{ "LABEL_DROPDOWN_TEMPLATE", new[] { "AUTO_SAVE_INTERVAL_DROP_DOWN", "AUTO_SAVE_FILE_NUMBER_DROP_DOWN" } },
+				};
+		}
+
+		readonly GameplaySettingsLogicDynamicWidgets dynamicWidgets = new();
+
+		readonly int[] autoSaveSeconds = [0, 10, 30, 45, 60, 120, 180, 300, 600];
 		readonly int[] autoSaveFileNumbers = [3, 5, 10, 20, 50, 100];
 		readonly AutoSaveSettings autoSaveSettings;
 		readonly GameSettings gameSettings;
@@ -123,7 +136,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			var colorDropdown = panel.Get<DropDownButtonWidget>("PLAYERCOLOR");
 			colorDropdown.IsDisabled = () => world.Type != WorldType.Shellmap;
-			colorDropdown.OnMouseDown = _ => colorManager.ShowColorDropDown(colorDropdown, playerSettings.Color, null, worldRenderer, color =>
+			colorDropdown.OnMouseDown = _ => colorManager.ShowColorDropDown(dynamicWidgets, colorDropdown, playerSettings.Color, null, worldRenderer, color =>
 			{
 				playerSettings.Color = color;
 				playerSettings.Save();
@@ -250,7 +263,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, options, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 500, options, SetupItem);
 		}
 
 		void ShowAutoSaveFileNumberDropdown(DropDownButtonWidget dropdown, IEnumerable<int> options)
@@ -272,7 +285,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				return item;
 			}
 
-			dropdown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 500, options, SetupItem);
+			dynamicWidgets.ShowDropDown(dropdown, "LABEL_DROPDOWN_TEMPLATE", 500, options, SetupItem);
 		}
 
 		void UpdateForumAuthFields()

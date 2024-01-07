@@ -10,18 +10,31 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using OpenRA.Widgets;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
 	public class LoadLocalPlayerProfileLogic : ChromeLogic
 	{
+		public class LoadLocalPlayerProfileLogicDynamicWidgets : DynamicWidgets
+		{
+			public override IReadOnlySet<string> WindowWidgetIds { get; } = EmptySet;
+			public override IReadOnlyDictionary<string, string> ParentWidgetIdForChildWidgetId { get; } =
+				new Dictionary<string, string>
+				{
+					{ "LOCAL_PROFILE_PANEL", "PLAYER_PROFILE_CONTAINER" },
+				};
+		}
+
+		readonly LoadLocalPlayerProfileLogicDynamicWidgets dynamicWidgets = new();
+
 		[ObjectCreator.UseCtor]
 		public LoadLocalPlayerProfileLogic(Widget widget, World world)
 		{
 			Func<bool> minimalProfile = () => Ui.CurrentWindow() != null;
 
-			Game.LoadWidget(world, "LOCAL_PROFILE_PANEL", widget, new WidgetArgs()
+			dynamicWidgets.LoadWidget(widget, "LOCAL_PROFILE_PANEL", new WidgetArgs()
 			{
 				{ "minimalProfile", minimalProfile }
 			});
