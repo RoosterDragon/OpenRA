@@ -74,7 +74,7 @@ namespace OpenRA.Mods.Common.Traits
 			var random = new MersenneTwister();
 			var terrainInfo = modData.DefaultTerrainInfo[args.Tileset];
 
-			if (!Exts.TryParseUshortInvariant(args.Settings.NodeWithKey("Tile").Value.Value, out var tileType))
+			if (!Exts.TryParseUInt16Invariant(args.Settings.NodeWithKey("Tile").Value.Value, out var tileType))
 				throw new YamlException("Illegal tile type");
 
 			if (!terrainInfo.TryGetTerrainInfo(new TerrainTile(tileType, 0), out var _))

@@ -89,8 +89,7 @@ namespace OpenRA.Mods.Common.MapGenerator
 			public readonly ImmutableArray<string> Tileset = default;
 			public readonly ImmutableArray<int> Players = default;
 
-			[FieldLoader.LoadUsing(nameof(LoadSettings))]
-			[FieldLoader.Require]
+			[FieldLoader.LoadUsing(nameof(LoadSettings), required: true)]
 			public readonly ImmutableArray<MiniYamlNode> Settings = default;
 
 			static object LoadSettings(MiniYaml yaml)

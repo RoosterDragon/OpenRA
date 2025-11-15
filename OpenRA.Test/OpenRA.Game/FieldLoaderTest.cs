@@ -58,7 +58,7 @@ namespace OpenRA.Test
 			static int privateStaticField;
 			public static int PublicStaticField;
 
-			static object LoadInt32(MiniYaml _) => 123;
+			static int LoadInt32(MiniYaml _) => 123;
 #pragma warning restore RCS1170 // Use read-only auto-implemented property
 #pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore IDE0044 // Add readonly modifier
@@ -105,7 +105,7 @@ namespace OpenRA.Test
 		{
 			static void Act() => FieldLoader.GetValue<object>("field", "test");
 
-			Assert.That(Act, Throws.TypeOf<NotImplementedException>().And.Message.EqualTo("FieldLoader: Missing field `[Type] test` on `Object`"));
+			Assert.That(Act, Throws.TypeOf<NotImplementedException>().And.Message.EqualTo("FieldLoader: Missing field `field` on `Object`"));
 		}
 
 		static IEnumerable<TestCaseData> GetValue_InvalidValue_TestCases()
@@ -116,14 +116,22 @@ namespace OpenRA.Test
 				new TestCaseData("test") { TypeArgs = [typeof(int)] },
 				new TestCaseData("1.2") { TypeArgs = [typeof(int)] },
 				new TestCaseData((int.MaxValue + 1L).ToString(CultureInfo.InvariantCulture)) { TypeArgs = [typeof(int)] },
+				new TestCaseData(null) { TypeArgs = [typeof(byte)] },
+				new TestCaseData("test") { TypeArgs = [typeof(byte)] },
+				new TestCaseData("1.2") { TypeArgs = [typeof(byte)] },
+				new TestCaseData((byte.MaxValue + 1L).ToString(CultureInfo.InvariantCulture)) { TypeArgs = [typeof(byte)] },
+				new TestCaseData(null) { TypeArgs = [typeof(short)] },
+				new TestCaseData("test") { TypeArgs = [typeof(short)] },
+				new TestCaseData("1.2") { TypeArgs = [typeof(short)] },
+				new TestCaseData((short.MaxValue + 1L).ToString(CultureInfo.InvariantCulture)) { TypeArgs = [typeof(short)] },
+				new TestCaseData(null) { TypeArgs = [typeof(int)] },
+				new TestCaseData("test") { TypeArgs = [typeof(int)] },
+				new TestCaseData("1.2") { TypeArgs = [typeof(int)] },
+				new TestCaseData((int.MaxValue + 1L).ToString(CultureInfo.InvariantCulture)) { TypeArgs = [typeof(int)] },
 				new TestCaseData(null) { TypeArgs = [typeof(ushort)] },
 				new TestCaseData("test") { TypeArgs = [typeof(ushort)] },
 				new TestCaseData("1.2") { TypeArgs = [typeof(ushort)] },
 				new TestCaseData((ushort.MaxValue + 1L).ToString(CultureInfo.InvariantCulture)) { TypeArgs = [typeof(ushort)] },
-				new TestCaseData(null) { TypeArgs = [typeof(long)] },
-				new TestCaseData("test") { TypeArgs = [typeof(long)] },
-				new TestCaseData("1.2") { TypeArgs = [typeof(long)] },
-				new TestCaseData((long.MaxValue + 1UL).ToString(CultureInfo.InvariantCulture)) { TypeArgs = [typeof(long)] },
 				new TestCaseData(null) { TypeArgs = [typeof(float)] },
 				new TestCaseData("test") { TypeArgs = [typeof(float)] },
 				new TestCaseData("1,2") { TypeArgs = [typeof(float)] },
@@ -242,8 +250,9 @@ namespace OpenRA.Test
 			return
 			[
 				new TestCaseData(123),
+				new TestCaseData((byte)123),
+				new TestCaseData((short)123),
 				new TestCaseData((ushort)123),
-				new TestCaseData(123L),
 				new TestCaseData(123.4f),
 				new TestCaseData(123m),
 				new TestCaseData("test"),
@@ -551,9 +560,9 @@ namespace OpenRA.Test
 		[TestCase(TypeArgs = [typeof(FrozenSet<FrozenSet<int>>)])]
 		public void GetValue_NestedCollections<T>()
 		{
-			var actual = FieldLoader.GetValue<T>("field", "1,2,3");
+			static void Act() => FieldLoader.GetValue<T>("field", "1,2,3");
 
-			Assert.That(actual, Is.EquivalentTo(new int[][] { [1], [2], [3] }));
+			Assert.That(Act, Throws.TypeOf<InvalidOperationException>().And.Message.EqualTo("FieldLoader: Refused to nest collections (Array/List/HashSet)"));
 		}
 
 		[Test]
@@ -570,7 +579,7 @@ namespace OpenRA.Test
 		{
 			static void Act() => FieldLoader.GetValue<sbyte>("field", "  test  ");
 
-			Assert.That(Act, Throws.TypeOf<YamlException>().And.Message.EqualTo($"FieldLoader: Cannot parse `test` into `field.{typeof(sbyte).FullName}`"));
+			Assert.That(Act, Throws.TypeOf<YamlException>().And.Message.EqualTo($"FieldLoader: Cannot parse `  test  ` into `field.{typeof(sbyte).FullName}`"));
 		}
 
 		sealed class LoadFieldOrPropertyTarget
@@ -608,9 +617,44 @@ namespace OpenRA.Test
 
 		sealed class LoadTarget
 		{
-			public int Int;
-			public string String;
 			public string Unset;
+			public int Int;
+			public byte Byte;
+			public short Short;
+			public ushort UShort;
+			public float Float;
+			public decimal Decimal;
+			public string String;
+			public Color Color;
+			public Hotkey Hotkey;
+			public HotkeyReference HotkeyReference;
+			public WDist WDist;
+			public WVec WVec;
+			public WVec[] WVecArray;
+			public WPos WPos;
+			public WAngle WAngle;
+			public WRot WRot;
+			public CPos CPos;
+			public CPos[] CPosArray;
+			public CVec CVec;
+			public CVec[] CVecArray;
+			public BooleanExpression BooleanExpression;
+			public IntegerExpression IntegerExpression;
+			public MapGridType Enum;
+			public bool Bool;
+			public int2[] Int2Array;
+			public Size Size;
+			public int2 Int2;
+			public float2 Float2;
+			public float3 Float3;
+			public Rectangle Rectangle;
+			public DateTime DateTime;
+			public int[] Array;
+			public List<int> List;
+			public HashSet<int> HashSet;
+			public BitSet<LoadTarget> BitSet;
+			public int? Nullable;
+			public sbyte TypeConverter;
 		}
 
 		[Test]
@@ -620,19 +664,125 @@ namespace OpenRA.Test
 			var yaml = new MiniYaml(
 				null,
 				[
-					new MiniYamlNode(nameof(LoadTarget.Int), "123"),
-					new MiniYamlNode(nameof(LoadTarget.String), "test"),
+					new MiniYamlNode(nameof(LoadTarget.Int), " 123 "),
+					new MiniYamlNode(nameof(LoadTarget.Byte), " 123 "),
+					new MiniYamlNode(nameof(LoadTarget.Short), " 123 "),
+					new MiniYamlNode(nameof(LoadTarget.UShort), " 123 "),
+					new MiniYamlNode(nameof(LoadTarget.Float), " 123.4 "),
+					new MiniYamlNode(nameof(LoadTarget.Decimal), " 123.4 "),
+					new MiniYamlNode(nameof(LoadTarget.String), " test "),
+					new MiniYamlNode(nameof(LoadTarget.Color), $" {Color.CornflowerBlue} "),
+					new MiniYamlNode(nameof(LoadTarget.Hotkey), $" {new Hotkey(Keycode.A, Modifiers.Shift)} "),
+					new MiniYamlNode(nameof(LoadTarget.WDist), " 123 "),
+					new MiniYamlNode(nameof(LoadTarget.WVec), " 123,456,789 "),
+					new MiniYamlNode(nameof(LoadTarget.WVecArray), " 123,456,789 "),
+					new MiniYamlNode(nameof(LoadTarget.WPos), " 123,456,789 "),
+					new MiniYamlNode(nameof(LoadTarget.WAngle), " 123 "),
+					new MiniYamlNode(nameof(LoadTarget.WRot), " 123,456,789 "),
+					new MiniYamlNode(nameof(LoadTarget.CPos), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.CPosArray), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.CVec), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.CVecArray), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.BooleanExpression), " true "),
+					new MiniYamlNode(nameof(LoadTarget.IntegerExpression), " 1 + 2 "),
+					new MiniYamlNode(nameof(LoadTarget.Enum), $" {MapGridType.RectangularIsometric} "),
+					new MiniYamlNode(nameof(LoadTarget.Bool), " true "),
+					new MiniYamlNode(nameof(LoadTarget.Int2Array), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.Size), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.Int2), " 123,456 "),
+					new MiniYamlNode(nameof(LoadTarget.Float2), " 123.4,567.8 "),
+					new MiniYamlNode(nameof(LoadTarget.Float3), " 123.4,567.8,9.01 "),
+					new MiniYamlNode(nameof(LoadTarget.Rectangle), " 123, 456, 789, 123 "),
+					new MiniYamlNode(nameof(LoadTarget.DateTime), $" {new DateTime(2000, 1, 1).ToString("yyyy-MM-dd HH-mm-ss", CultureInfo.InvariantCulture)} "),
+					new MiniYamlNode(nameof(LoadTarget.Array), " 1,2,3 "),
+					new MiniYamlNode(nameof(LoadTarget.List), " 1,2,3 "),
+					new MiniYamlNode(nameof(LoadTarget.HashSet), " 1,2,3 "),
+					new MiniYamlNode(nameof(LoadTarget.BitSet), " a,b,c "),
+					new MiniYamlNode(nameof(LoadTarget.Nullable), " 1 "),
+					new MiniYamlNode(nameof(LoadTarget.TypeConverter), " 1 "),
 				]);
 
 			FieldLoader.Load(target, yaml);
 
-			Assert.That(target.Int, Is.EqualTo(123));
-			Assert.That(target.String, Is.EqualTo("test"));
 			Assert.That(target.Unset, Is.EqualTo("unset"));
+			Assert.That(target.Int, Is.EqualTo(123));
+			Assert.That(target.Byte, Is.EqualTo(123));
+			Assert.That(target.Short, Is.EqualTo(123));
+			Assert.That(target.UShort, Is.EqualTo(123));
+			Assert.That(target.Float, Is.EqualTo(123.4f));
+			Assert.That(target.Decimal, Is.EqualTo(123.4m));
+			Assert.That(target.String, Is.EqualTo("test"));
+			Assert.That(target.Color, Is.EqualTo(Color.CornflowerBlue));
+			Assert.That(target.Hotkey, Is.EqualTo(new Hotkey(Keycode.A, Modifiers.Shift)));
+			Assert.That(target.WDist, Is.EqualTo(new WDist(123)));
+			Assert.That(target.WVec, Is.EqualTo(new WVec(123, 456, 789)));
+			Assert.That(target.WVecArray, Is.EqualTo([new WVec(123, 456, 789)]));
+			Assert.That(target.WPos, Is.EqualTo(new WPos(123, 456, 789)));
+			Assert.That(target.WAngle, Is.EqualTo(new WAngle(123)));
+			Assert.That(target.WRot, Is.EqualTo(new WRot(new WAngle(123), new WAngle(456), new WAngle(789))));
+			Assert.That(target.CPos, Is.EqualTo(new CPos(123, 456)));
+			Assert.That(target.CPosArray, Is.EqualTo([new CPos(123, 456)]));
+			Assert.That(target.CVec, Is.EqualTo(new CVec(123, 456)));
+			Assert.That(target.CVecArray, Is.EqualTo([new CVec(123, 456)]));
+			Assert.That(target.BooleanExpression.Expression, Is.EqualTo("true"));
+			Assert.That(target.IntegerExpression.Expression, Is.EqualTo("1 + 2"));
+			Assert.That(target.Enum, Is.EqualTo(MapGridType.RectangularIsometric));
+			Assert.That(target.Bool, Is.EqualTo(true));
+			Assert.That(target.Int2Array, Is.EqualTo([new int2(123, 456)]));
+			Assert.That(target.Size, Is.EqualTo(new Size(123, 456)));
+			Assert.That(target.Int2, Is.EqualTo(new int2(123, 456)));
+			Assert.That(target.Float2, Is.EqualTo(new float2(123.4f, 567.8f)));
+			Assert.That(target.Float3, Is.EqualTo(new float3(123.4f, 567.8f, 9.01f)));
+			Assert.That(target.Rectangle, Is.EqualTo(new Rectangle(123, 456, 789, 123)));
+			Assert.That(target.DateTime, Is.EqualTo(new DateTime(2000, 1, 1)));
+			Assert.That(target.Array, Is.EqualTo([1, 2, 3]));
+			Assert.That(target.List, Is.EqualTo([1, 2, 3]));
+			Assert.That(target.HashSet, Is.EqualTo([1, 2, 3]));
+			Assert.That(target.BitSet, Is.EqualTo(["a", "b", "c"]));
+			Assert.That(target.Nullable, Is.EqualTo(1));
+			Assert.That(target.TypeConverter, Is.EqualTo(1));
 		}
 
 		[Test]
-		public void Load_Generic()
+		public void Load_Covariance()
+		{
+			var target = new LoadTarget();
+			var yaml = new MiniYaml(
+				null,
+				[
+					new MiniYamlNode(nameof(LoadTarget.Int), "123"),
+					new MiniYamlNode(nameof(LoadTarget.String), "test"),
+				]);
+			FieldLoader.Load<object>(target, yaml);
+
+			Assert.That(target.Int, Is.EqualTo(123));
+			Assert.That(target.String, Is.EqualTo("test"));
+		}
+
+		sealed class LoadReadonlyTarget
+		{
+			public readonly int Int;
+			public readonly string String;
+		}
+
+		[Test]
+		public void Load_Readonly()
+		{
+			var target = new LoadReadonlyTarget();
+			var yaml = new MiniYaml(
+				null,
+				[
+					new MiniYamlNode(nameof(LoadReadonlyTarget.Int), "123"),
+					new MiniYamlNode(nameof(LoadReadonlyTarget.String), "test"),
+				]);
+			FieldLoader.Load(target, yaml);
+
+			Assert.That(target.Int, Is.EqualTo(123));
+			Assert.That(target.String, Is.EqualTo("test"));
+		}
+
+		[Test]
+		public void Load_NoExistingClass()
 		{
 			var expected = new LoadTarget();
 			var yaml = new MiniYaml(
@@ -652,7 +802,10 @@ namespace OpenRA.Test
 
 		sealed class LoadDictionaryTarget
 		{
-			public Dictionary<int, int> Dictionary;
+			public Dictionary<string, int> Dictionary;
+			public Dictionary<string, int[]> NestedDictionary;
+			public Dictionary<string, Dictionary<string, int[]>> DoubleNestedDictionary;
+			public Dictionary<string, string[]> NestedDictionaryWithMatchingKeyAndInnerValueType;
 		}
 
 		[Test]
@@ -667,14 +820,86 @@ namespace OpenRA.Test
 						new MiniYaml(
 							null,
 							[
-								new MiniYamlNode("12", "34"),
-								new MiniYamlNode("56", "78")
+								new MiniYamlNode(" a ", " 12 "),
+								new MiniYamlNode(" b ", " 34 ")
 							]))
 				]);
 
 			FieldLoader.Load(target, yaml);
 
-			Assert.That(target.Dictionary, Is.EquivalentTo(new Dictionary<int, int> { { 12, 34 }, { 56, 78 } }));
+			Assert.That(target.Dictionary, Is.EquivalentTo(new Dictionary<string, int> { { "a", 12 }, { "b", 34 } }));
+		}
+
+		[Test]
+		public void Load_DictionaryWithArrayValue()
+		{
+			var target = new LoadDictionaryTarget();
+			var yaml = new MiniYaml(
+				null,
+				[
+					new MiniYamlNode(
+						nameof(LoadDictionaryTarget.NestedDictionary),
+						new MiniYaml(
+							null,
+							[
+								new MiniYamlNode(" a ", " 12,34 "),
+								new MiniYamlNode(" b ", " 56,78 ")
+							]))
+				]);
+
+			FieldLoader.Load(target, yaml);
+
+			Assert.That(target.NestedDictionary, Is.EquivalentTo(new Dictionary<string, int[]> { { "a", [12, 34] }, { "b", [56, 78] } }));
+		}
+
+		[Test]
+		public void Load_DictionaryWithDictionaryValue()
+		{
+			var target = new LoadDictionaryTarget();
+			var yaml = new MiniYaml(
+				null,
+				[
+					new MiniYamlNode(
+						nameof(LoadDictionaryTarget.DoubleNestedDictionary),
+						new MiniYaml(
+							null,
+							[
+								new MiniYamlNode(" a ", new MiniYaml(null, [new MiniYamlNode(" a1 ", " 1,2 "), new MiniYamlNode(" a2 ", " 3,4 ")])),
+								new MiniYamlNode(" b ", new MiniYaml(null, [new MiniYamlNode(" b1 ", " 5,6 "), new MiniYamlNode(" b2 ", " 7,8 ")])),
+							]))
+				]);
+
+			FieldLoader.Load(target, yaml);
+
+			Assert.That(target.DoubleNestedDictionary, Is.EquivalentTo(
+				new Dictionary<string, Dictionary<string, int[]>>
+				{
+					{ "a", new Dictionary<string, int[]> { { "a1", [1, 2] }, { "a2", [3, 4] } } },
+					{ "b", new Dictionary<string, int[]> { { "b1", [5, 6] }, { "b2", [7, 8] } } },
+				}));
+		}
+
+		[Test]
+		public void Load_DictionaryWithMatchingKeyAndInnerValueType()
+		{
+			var target = new LoadDictionaryTarget();
+			var yaml = new MiniYaml(
+				null,
+				[
+					new MiniYamlNode(
+						nameof(LoadDictionaryTarget.NestedDictionaryWithMatchingKeyAndInnerValueType),
+						new MiniYaml(
+							null,
+							[
+								new MiniYamlNode(" a ", " 12,34 "),
+								new MiniYamlNode(" b ", " 56,78 ")
+							]))
+				]);
+
+			FieldLoader.Load(target, yaml);
+
+			Assert.That(target.NestedDictionaryWithMatchingKeyAndInnerValueType,
+				Is.EquivalentTo(new Dictionary<string, string[]> { { "a", ["12", "34"] }, { "b", ["56", "78"] } }));
 		}
 
 		sealed class LoadFrozenDictionaryTarget
@@ -712,6 +937,10 @@ namespace OpenRA.Test
 			public int Int2 = 2;
 			[FieldLoader.Require]
 			public int Int3 = 3;
+			[FieldLoader.Require]
+			public int[] Array = [1];
+			[FieldLoader.Require]
+			public Dictionary<int, int> Dictionary = new() { { 1, 1 } };
 
 			public int Int4 = 4;
 			public int Int5 = 5;
@@ -732,12 +961,18 @@ namespace OpenRA.Test
 
 			Assert.That(Act,
 				Throws.TypeOf<FieldLoader.MissingFieldsException>().And
-				.Message.EqualTo($"{nameof(LoadRequiredTarget.Int2)}, {nameof(LoadRequiredTarget.Int3)}"));
+				.Message.EqualTo(
+					$"{nameof(LoadRequiredTarget.Int2)}," +
+					$" {nameof(LoadRequiredTarget.Int3)}," +
+					$" {nameof(LoadRequiredTarget.Array)}," +
+					$" {nameof(LoadRequiredTarget.Dictionary)}"));
 			Assert.That(target.Int1, Is.EqualTo(123));
 			Assert.That(target.Int2, Is.EqualTo(2));
 			Assert.That(target.Int3, Is.EqualTo(3));
 			Assert.That(target.Int4, Is.EqualTo(456));
 			Assert.That(target.Int5, Is.EqualTo(5));
+			Assert.That(target.Array, Is.EqualTo([1]));
+			Assert.That(target.Dictionary, Is.EqualTo(new Dictionary<int, int>() { { 1, 1 } }));
 		}
 
 		sealed class LoadIgnoreTarget
@@ -770,19 +1005,25 @@ namespace OpenRA.Test
 
 		sealed class LoadUsingTarget
 		{
-			[FieldLoader.LoadUsing(nameof(LoadInt))]
+			[FieldLoader.LoadUsing(nameof(LoadInt1))]
 			public int Int1 = 1;
-			[FieldLoader.LoadUsing(nameof(LoadInt), true)]
+			[FieldLoader.LoadUsing(nameof(LoadInt2), true)]
 			public int Int2 = 2;
 
-			[FieldLoader.LoadUsing(nameof(LoadInt))]
+			[FieldLoader.LoadUsing(nameof(LoadInt3))]
 			public int Int3 = 3;
-			[FieldLoader.LoadUsing(nameof(LoadInt), true)]
+			[FieldLoader.LoadUsing(nameof(LoadInt4), true)]
 			public int Int4 = 4;
 
 			public int Int5 = 5;
 
-			static object LoadInt(MiniYaml yaml) => Exts.ParseInt32Invariant(yaml.NodeWithKey("ForLoadUsing").Value.Value);
+#pragma warning disable CA1859 // Use concrete types when possible for improved performance
+			// Legacy support: Some LoadUsing methods return an object, ensure these keep working.
+			static object LoadInt1(MiniYaml yaml) => Exts.ParseInt32Invariant(yaml.NodeWithKey("ForLoadUsing1").Value.Value);
+#pragma warning restore CA1859 // Use concrete types when possible for improved performance
+			static int LoadInt2(MiniYaml yaml) => Exts.ParseInt32Invariant(yaml.NodeWithKey("ForLoadUsing2").Value.Value);
+			static int LoadInt3(MiniYaml yaml) => Exts.ParseInt32Invariant(yaml.NodeWithKey("ForLoadUsing3").Value.Value);
+			static int LoadInt4(MiniYaml yaml) => Exts.ParseInt32Invariant(yaml.NodeWithKey("ForLoadUsing4").Value.Value);
 		}
 
 		[Test]
@@ -792,10 +1033,12 @@ namespace OpenRA.Test
 			var yaml = new MiniYaml(
 				null,
 				[
-					new MiniYamlNode("ForLoadUsing", "100"),
-					new MiniYamlNode(nameof(LoadUsingTarget.Int1), "12"),
-					new MiniYamlNode(nameof(LoadUsingTarget.Int2), "34"),
-					new MiniYamlNode(nameof(LoadUsingTarget.Int5), "56"),
+					new MiniYamlNode("ForLoadUsing1", "100"),
+					new MiniYamlNode("ForLoadUsing2", "200"),
+					new MiniYamlNode("ForLoadUsing3", "300"),
+					new MiniYamlNode(nameof(LoadUsingTarget.Int1), "10"),
+					new MiniYamlNode(nameof(LoadUsingTarget.Int2), "20"),
+					new MiniYamlNode(nameof(LoadUsingTarget.Int5), "50"),
 				]);
 
 			void Act() => FieldLoader.Load(target, yaml);
@@ -804,10 +1047,10 @@ namespace OpenRA.Test
 				Throws.TypeOf<FieldLoader.MissingFieldsException>().And
 				.Message.EqualTo(nameof(LoadRequiredTarget.Int4)));
 			Assert.That(target.Int1, Is.EqualTo(100));
-			Assert.That(target.Int2, Is.EqualTo(100));
-			Assert.That(target.Int3, Is.EqualTo(100));
+			Assert.That(target.Int2, Is.EqualTo(200));
+			Assert.That(target.Int3, Is.EqualTo(300));
 			Assert.That(target.Int4, Is.EqualTo(4));
-			Assert.That(target.Int5, Is.EqualTo(56));
+			Assert.That(target.Int5, Is.EqualTo(50));
 		}
 
 		sealed class LoadUsingMissingTarget
@@ -828,6 +1071,103 @@ namespace OpenRA.Test
 				Throws.TypeOf<InvalidOperationException>().And
 				.Message.EqualTo("LoadUsingMissingTarget does not specify a loader function 'unknown'"));
 			Assert.That(target.Int, Is.EqualTo(1));
+		}
+
+		sealed class LoadUsingWrongReturn
+		{
+			[FieldLoader.LoadUsing(nameof(Load))]
+			public int Int = 1;
+
+			static long Load(MiniYaml _) => 10;
+		}
+
+		[Test]
+		public void Load_UsingWrongReturn()
+		{
+			var target = new LoadUsingWrongReturn();
+			var yaml = new MiniYaml(null);
+
+			void Act() => FieldLoader.Load(target, yaml);
+
+			Assert.That(Act,
+				Throws.TypeOf<InvalidOperationException>().And
+				.Message.EqualTo("LoadUsingWrongReturn loader function 'Load' should return a System.Int32"));
+			Assert.That(target.Int, Is.EqualTo(1));
+		}
+
+		sealed class LoadUsingWrongParameters
+		{
+			[FieldLoader.LoadUsing(nameof(Load))]
+			public int Int = 1;
+
+			static int Load() => 10;
+		}
+
+		[Test]
+		public void Load_UsingWrongParameters()
+		{
+			var target = new LoadUsingWrongParameters();
+			var yaml = new MiniYaml(null);
+
+			void Act() => FieldLoader.Load(target, yaml);
+
+			Assert.That(Act,
+				Throws.TypeOf<InvalidOperationException>().And
+				.Message.EqualTo("LoadUsingWrongParameters loader function 'Load' must accept only a single MiniYaml parameter"));
+			Assert.That(target.Int, Is.EqualTo(1));
+		}
+
+		[Test]
+		public void Load_NoMatchingField()
+		{
+			var target = new object();
+			var yaml = new MiniYaml(
+				null,
+				[
+					new MiniYamlNode("FieldNotInObject", "test"),
+				]);
+
+			void Act() => FieldLoader.Load(target, yaml);
+
+			Assert.That(Act, Throws.Nothing);
+		}
+
+		sealed class LoadUnsupportedFieldTarget
+		{
+			public Random Random;
+			public Random[] RandomArray;
+			public Dictionary<Random, int> RandomKeyDictionary;
+			public Dictionary<int, Random> RandomValueDictionary;
+		}
+
+		[Test]
+		public void Load_UnsupportedField()
+		{
+			var target = new LoadUnsupportedFieldTarget();
+			var yaml = new MiniYaml(null);
+
+			void Act() => FieldLoader.Load(target, yaml);
+
+			Assert.That(Act, Throws.Nothing);
+		}
+
+		sealed class LoadMultipleAttributesTarget
+		{
+			[FieldLoader.Ignore]
+			[FieldLoader.Require]
+			public int Int;
+		}
+
+		[Test]
+		public void Load_MultipleAttributes()
+		{
+			var target = new LoadMultipleAttributesTarget();
+			var yaml = new MiniYaml(null);
+
+			void Act() => FieldLoader.Load(target, yaml);
+
+			Assert.That(Act, Throws.TypeOf<InvalidOperationException>().And.
+				Message.EqualTo("Multiple FieldLoader attributes on OpenRA.Test.FieldLoaderTest+LoadMultipleAttributesTarget.Int. At most one is supported."));
 		}
 	}
 }

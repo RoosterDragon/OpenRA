@@ -140,7 +140,7 @@ namespace OpenRA.Network
 
 		public string ModLabel => $"{ModTitle} ({Version})";
 
-		static object LoadClients(MiniYaml yaml)
+		static ImmutableArray<GameClient> LoadClients(MiniYaml yaml)
 		{
 			var clients = new List<GameClient>();
 			var clientsNode = yaml.NodeWithKeyOrDefault("Clients");

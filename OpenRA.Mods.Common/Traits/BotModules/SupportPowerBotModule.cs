@@ -24,7 +24,7 @@ namespace OpenRA.Mods.Common.Traits
 		[FieldLoader.LoadUsing(nameof(LoadDecisions))]
 		public readonly ImmutableArray<SupportPowerDecision> Decisions = [];
 
-		static object LoadDecisions(MiniYaml yaml)
+		static ImmutableArray<SupportPowerDecision> LoadDecisions(MiniYaml yaml)
 		{
 			var ret = new List<SupportPowerDecision>();
 			var decisions = yaml.NodeWithKeyOrDefault("Decisions");

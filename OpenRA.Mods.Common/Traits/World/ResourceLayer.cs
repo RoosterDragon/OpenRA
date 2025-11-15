@@ -59,7 +59,7 @@ namespace OpenRA.Mods.Common.Traits
 		public readonly bool RecalculateResourceDensity = false;
 
 		// Copied to EditorResourceLayerInfo, ResourceRendererInfo
-		protected static object LoadResourceTypes(MiniYaml yaml)
+		protected static FrozenDictionary<string, ResourceTypeInfo> LoadResourceTypes(MiniYaml yaml)
 		{
 			var ret = new Dictionary<string, ResourceTypeInfo>();
 			var resources = yaml.NodeWithKeyOrDefault("ResourceTypes");

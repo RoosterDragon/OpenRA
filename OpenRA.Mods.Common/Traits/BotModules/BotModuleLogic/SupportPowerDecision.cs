@@ -52,7 +52,7 @@ namespace OpenRA.Mods.Common.Traits
 			FieldLoader.Load(this, yaml);
 		}
 
-		static object LoadConsiderations(MiniYaml yaml)
+		static ImmutableArray<Consideration> LoadConsiderations(MiniYaml yaml)
 		{
 			var ret = new List<Consideration>();
 			foreach (var d in yaml.Nodes)

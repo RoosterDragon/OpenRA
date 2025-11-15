@@ -26,7 +26,7 @@ namespace OpenRA
 		[FieldLoader.LoadUsing(nameof(LoadBadges))]
 		public readonly List<PlayerBadge> Badges;
 
-		static object LoadBadges(MiniYaml yaml)
+		static List<PlayerBadge> LoadBadges(MiniYaml yaml)
 		{
 			var badges = new List<PlayerBadge>();
 

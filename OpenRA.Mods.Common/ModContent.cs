@@ -106,7 +106,7 @@ namespace OpenRA.Mods.Common
 		[FieldLoader.LoadUsing(nameof(LoadPackages))]
 		public readonly ImmutableArray<KeyValuePair<string, ModPackage>> Packages = [];
 
-		static object LoadPackages(MiniYaml yaml)
+		static ImmutableArray<KeyValuePair<string, ModPackage>> LoadPackages(MiniYaml yaml)
 		{
 			var packages = new List<KeyValuePair<string, ModPackage>>();
 			var packageNode = yaml.NodeWithKeyOrDefault("Packages");
@@ -120,7 +120,7 @@ namespace OpenRA.Mods.Common
 		[FieldLoader.LoadUsing(nameof(LoadDownloads))]
 		public readonly ImmutableArray<string> Downloads = [];
 
-		static object LoadDownloads(MiniYaml yaml)
+		static ImmutableArray<string> LoadDownloads(MiniYaml yaml)
 		{
 			var downloadNode = yaml.NodeWithKeyOrDefault("Downloads");
 			return downloadNode != null ? downloadNode.Value.Nodes.Select(n => n.Key).ToImmutableArray() : [];
@@ -129,7 +129,7 @@ namespace OpenRA.Mods.Common
 		[FieldLoader.LoadUsing(nameof(LoadSources))]
 		public readonly ImmutableArray<string> Sources = [];
 
-		static object LoadSources(MiniYaml yaml)
+		static ImmutableArray<string> LoadSources(MiniYaml yaml)
 		{
 			var sourceNode = yaml.NodeWithKeyOrDefault("Sources");
 			return sourceNode != null ? sourceNode.Value.Nodes.Select(n => n.Key).ToImmutableArray() : [];

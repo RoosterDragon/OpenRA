@@ -506,7 +506,7 @@ namespace OpenRA
 			return byte.Parse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo);
 		}
 
-		public static ushort ParseUshortInvariant(string s)
+		public static ushort ParseUInt16Invariant(string s)
 		{
 			return ushort.Parse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo);
 		}
@@ -532,9 +532,14 @@ namespace OpenRA
 			return byte.TryParse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo, out i);
 		}
 
-		public static bool TryParseUshortInvariant(string s, out ushort i)
+		public static bool TryParseUInt16Invariant(string s, out ushort i)
 		{
 			return ushort.TryParse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo, out i);
+		}
+
+		public static bool TryParseInt16Invariant(string s, out short i)
+		{
+			return short.TryParse(s, NumberStyles.Integer, NumberFormatInfo.InvariantInfo, out i);
 		}
 
 		public static bool TryParseInt32Invariant(string s, out int i)

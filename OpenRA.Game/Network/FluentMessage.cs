@@ -58,12 +58,12 @@ namespace OpenRA.Network
 		[FieldLoader.LoadUsing(nameof(LoadArguments))]
 		public readonly ImmutableArray<object> Arguments;
 
-		static object LoadArguments(MiniYaml yaml)
+		static ImmutableArray<object> LoadArguments(MiniYaml yaml)
 		{
 			var argumentsNode = yaml.NodeWithKeyOrDefault("Arguments");
 
 			if (argumentsNode == null)
-				return ImmutableArray<object>.Empty;
+				return [];
 
 			var arguments = new List<object>(argumentsNode.Value.Nodes.Length * 2);
 			foreach (var argumentNode in argumentsNode.Value.Nodes)

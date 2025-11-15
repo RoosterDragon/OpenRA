@@ -36,7 +36,7 @@ namespace OpenRA
 		[FieldLoader.LoadUsing(nameof(LoadSpeeds))]
 		public readonly Dictionary<string, GameSpeed> Speeds;
 
-		static object LoadSpeeds(MiniYaml y)
+		static Dictionary<string, GameSpeed> LoadSpeeds(MiniYaml y)
 		{
 			var ret = new Dictionary<string, GameSpeed>();
 			var speedsNode = y.NodeWithKeyOrDefault("Speeds");

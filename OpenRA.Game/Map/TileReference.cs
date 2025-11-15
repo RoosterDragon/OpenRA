@@ -24,7 +24,7 @@ namespace OpenRA
 		{
 			var split = s.Split(',');
 			if (split.Length == 2 &&
-				Exts.TryParseUshortInvariant(split[0], out var type) &&
+				Exts.TryParseUInt16Invariant(split[0], out var type) &&
 				Exts.TryParseByteInvariant(split[1], out var index))
 			{
 				tt = new TerrainTile(type, index);

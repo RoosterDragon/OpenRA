@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Common.Traits
 		public readonly FrozenDictionary<string, ResourceLayerInfo.ResourceTypeInfo> ResourceTypes = null;
 
 		// Copied from ResourceLayerInfo
-		protected static object LoadResourceTypes(MiniYaml yaml)
+		protected static FrozenDictionary<string, ResourceLayerInfo.ResourceTypeInfo> LoadResourceTypes(MiniYaml yaml)
 		{
 			var ret = new Dictionary<string, ResourceLayerInfo.ResourceTypeInfo>();
 			var resources = yaml.NodeWithKeyOrDefault("ResourceTypes");

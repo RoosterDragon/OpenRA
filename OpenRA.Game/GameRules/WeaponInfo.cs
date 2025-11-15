@@ -144,7 +144,7 @@ namespace OpenRA.GameRules
 			FieldLoader.Load(this, content);
 		}
 
-		static object LoadProjectile(MiniYaml yaml)
+		static IProjectileInfo LoadProjectile(MiniYaml yaml)
 		{
 			var proj = yaml.NodeWithKeyOrDefault("Projectile")?.Value;
 			if (proj == null)
@@ -158,7 +158,7 @@ namespace OpenRA.GameRules
 			return ret;
 		}
 
-		static object LoadWarheads(MiniYaml yaml)
+		static ImmutableArray<IWarhead> LoadWarheads(MiniYaml yaml)
 		{
 			var retList = new List<IWarhead>();
 			foreach (var node in yaml.Nodes.Where(n => n.Key.StartsWith("Warhead", StringComparison.Ordinal)))
