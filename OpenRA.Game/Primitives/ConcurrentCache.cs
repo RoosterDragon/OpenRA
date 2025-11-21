@@ -41,5 +41,7 @@ namespace OpenRA.Primitives
 		public int Count => cache.Count;
 		public IEnumerator<KeyValuePair<T, U>> GetEnumerator() { return cache.GetEnumerator(); }
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return GetEnumerator(); }
+
+		public void Clear() => cache.Clear();
 	}
 }

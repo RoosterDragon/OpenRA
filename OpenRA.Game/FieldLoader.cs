@@ -57,9 +57,11 @@ namespace OpenRA
 		public static Action<string, Type> UnknownFieldAction = (s, f) =>
 			throw new NotImplementedException($"FieldLoader: Missing field `{s}` on `{f.Name}`");
 
+		public static readonly Dictionary<Type, int> TypeCounts = [];
+
 		static readonly ConcurrentCache<Type, FieldLoadInfo[]> TypeLoadInfo =
 			new(BuildTypeLoadInfo);
-		static readonly ConcurrentCache<Type, Delegate> ClassLoadDelegates =
+		public static readonly ConcurrentCache<Type, Delegate> ClassLoadDelegates =
 			new(BuildClassLoadDelegate);
 		static readonly ConcurrentCache<Type, (Delegate ParseDelegate, ParseDelegateKind Kind, Parsers Parsers)> ParseDelegateCache =
 			new(CacheParseDelegate);
@@ -656,6 +658,12 @@ namespace OpenRA
 		public static void Load<T>(T self, MiniYaml my)
 		{
 			var type = self.GetType();
+			lock (TypeCounts)
+			{
+				var count = TypeCounts.GetOrAdd(type, 0);
+				TypeCounts[type] = count + 1;
+			}
+
 			var loadClassDelegate = ClassLoadDelegates[type];
 			if (loadClassDelegate == null)
 				return;

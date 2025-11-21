@@ -338,6 +338,11 @@ namespace OpenRA
 
 			// Proactively collect memory during loading to reduce peak memory.
 			GC.Collect();
+
+			foreach (var kvp in FieldLoader.TypeCounts.OrderByDescending(x => x.Value))
+				Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+
+			return RunStatus.Success;
 			return Run();
 		}
 
